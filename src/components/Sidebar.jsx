@@ -19,6 +19,24 @@ import {
 
 const ICON_STROKE = 1.75;
 
+/** public/svgs/playground/*.svg — some tab ids map to different filenames */
+const SIDEBAR_ICON_FILE = {
+  whatsapp: "send",
+};
+
+/**
+ * Sidebar nav images are static SVGs; use filters so they read white on teal and black when idle.
+ */
+function sidebarNavIconSrc(tabId) {
+  const file = SIDEBAR_ICON_FILE[tabId] ?? tabId;
+  return `/svgs/playground/${file}.svg`;
+}
+
+/** `true` = row uses brand-teal + white foreground (invert dark art to white) */
+function sidebarNavIconClassName(onTeal) {
+  return `h-5 w-5 shrink-0 object-contain ${onTeal ? "brightness-0 invert" : ""}`;
+}
+
 /** Sub-items shown under Playground (tenant product area). */
 const PLAYGROUND_CHILDREN = [
   { id: "chatbots", label: "Chatbots", icon: Bot },
@@ -224,7 +242,11 @@ export default function Sidebar({
                 : "text-gray-800 hover:bg-gray-100"
             } ${pgBlocked ? "cursor-not-allowed opacity-50" : ""} ${collapsed ? "justify-center px-2" : ""}`}
           >
-            <img src="/svgs/playground/playground.svg" alt="Playground" className="w-5 h-5" />
+            <img
+              src="/svgs/playground/playground.svg"
+              alt=""
+              className={sidebarNavIconClassName(playgroundSectionActive)}
+            />
             <span
               className={`min-w-0 flex-1 truncate ${collapsed ? "sr-only" : ""}`}
             >
@@ -280,7 +302,11 @@ export default function Sidebar({
                           : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <img src={`/svgs/playground/${item.id}.svg`} alt={item.label} className="w-5 h-5" />
+                    <img
+                      src={sidebarNavIconSrc(item.id)}
+                      alt=""
+                      className="h-5 w-5 shrink-0 object-contain"
+                    />
                     <span className="truncate">{item.label}</span>
                   </button>
                 );
@@ -308,7 +334,11 @@ export default function Sidebar({
           collapsed ? "justify-center px-2" : ""
         }`}
       >
-        <img src={`/svgs/playground/${item.id}.svg`} alt={item.label} className="w-5 h-5" />
+        <img
+          src={sidebarNavIconSrc(item.id)}
+          alt=""
+          className={sidebarNavIconClassName(active)}
+        />
         <span className={`truncate ${collapsed ? "sr-only" : ""}`}>
           {item.label}
         </span>
