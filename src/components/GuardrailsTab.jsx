@@ -474,9 +474,9 @@ export default function GuardrailsTab() {
         <div className="p-6">
           {loading ? (
             <div className="py-12 text-center text-gray-500">Loading guardrails...</div>
-          ) : guardrails.length === 0 ? (
+          ) : guardrails.length ===0 ? (
             <EmptyState
-              icon={Shield}
+              icon="guardrails"
               title="No guardrails yet"
               description="Create your first guardrail to define content rules for your chatbots."
             >
@@ -505,7 +505,7 @@ export default function GuardrailsTab() {
                       aria-haspopup="dialog"
                       aria-controls="guardrails-filter-panel"
                     >
-                      <SlidersHorizontal className="h-4 w-4 text-gray-500" />
+                      <img src="/svgs/guardrails/filter.svg" alt="Filters" className="w-4 h-4" />
                       Filters
                       <ChevronDown
                         className={`h-4 w-4 text-gray-500 transition-transform ${filterMenuOpen ? 'rotate-180' : ''}`}

@@ -224,11 +224,7 @@ export default function Sidebar({
                 : "text-gray-800 hover:bg-gray-100"
             } ${pgBlocked ? "cursor-not-allowed opacity-50" : ""} ${collapsed ? "justify-center px-2" : ""}`}
           >
-            <MessageSquare
-              size={20}
-              strokeWidth={ICON_STROKE}
-              className="shrink-0"
-            />
+            <img src="/svgs/playground/playground.svg" alt="Playground" className="w-5 h-5" />
             <span
               className={`min-w-0 flex-1 truncate ${collapsed ? "sr-only" : ""}`}
             >
@@ -266,7 +262,6 @@ export default function Sidebar({
             />
             <div className="space-y-0.5 py-1">
               {playgroundChildren.map((item) => {
-                const Icon = item.icon;
                 const active = activeTab === item.id;
                 const blocked = isBlocked(item.id);
                 return (
@@ -285,11 +280,7 @@ export default function Sidebar({
                           : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
-                    <Icon
-                      size={18}
-                      strokeWidth={ICON_STROKE}
-                      className="shrink-0 text-gray-600"
-                    />
+                    <img src={`/svgs/playground/${item.id}.svg`} alt={item.label} className="w-5 h-5" />
                     <span className="truncate">{item.label}</span>
                   </button>
                 );
@@ -302,7 +293,6 @@ export default function Sidebar({
   };
 
   const renderStandaloneRow = (item) => {
-    const Icon = item.icon;
     const active = activeTab === item.id;
     const blocked = isBlocked(item.id);
     return (
@@ -318,11 +308,7 @@ export default function Sidebar({
           collapsed ? "justify-center px-2" : ""
         }`}
       >
-        <Icon
-          size={20}
-          strokeWidth={ICON_STROKE}
-          className="shrink-0 opacity-95"
-        />
+        <img src={`/svgs/playground/${item.id}.svg`} alt={item.label} className="w-5 h-5" />
         <span className={`truncate ${collapsed ? "sr-only" : ""}`}>
           {item.label}
         </span>
@@ -354,11 +340,7 @@ export default function Sidebar({
           className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <PanelLeft
-            size={20}
-            strokeWidth={ICON_STROKE}
-            className={collapsed ? "rotate-180" : ""}
-          />
+          <img src="/svgs/playground/collapse.svg" alt="Sidebar Toggle" className="w-5 h-5" />
         </button>
       </div>
 

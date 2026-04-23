@@ -101,7 +101,7 @@ export default function DashboardTopNav({
           className="shrink-0 rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
           aria-label="Notifications"
         >
-          <Bell className="h-5 w-5" strokeWidth={ICON_STROKE} />
+          <img src="/svgs/playground/notification.svg" alt="Notifications" className="w-6 h-6" />
         </button>
         <div className="hidden h-8 w-px shrink-0 bg-gray-200 sm:block" aria-hidden />
 

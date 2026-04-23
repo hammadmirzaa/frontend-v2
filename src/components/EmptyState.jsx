@@ -19,11 +19,9 @@ export default function EmptyState({
       className={`flex flex-col items-center justify-center px-4 text-center ${spacious ? 'min-h-[min(420px,60vh)] py-16' : 'py-12'} ${className}`}
     >
       {Icon && (
-        <div
-          className={`mb-5 flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-brand-teal/[0.08] ring-1 ring-inset ring-brand-teal/10 ${iconWrapperClassName}`}
-        >
-          <Icon className="h-9 w-9 text-brand-teal" strokeWidth={1.5} aria-hidden />
-        </div>
+
+          <img src={`/svgs/${Icon}.svg`} alt={Icon} className="w-20 h-20" />
+
       )}
       <h3 className="max-w-md text-base font-semibold text-gray-900 sm:text-lg">{title}</h3>
       {description ? (

@@ -42,7 +42,7 @@ export default function PreviewStep({
             </div>
                           <div className="absolute bottom-2 right-4 flex justify-end p-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-teal text-white shadow-md">
-                  <MessageCircle className="h-5 w-5" />
+                  <img src="/svgs/chatbot/widget-preview.svg" alt="Message" className="w-5 h-5" />
                 </div>
               </div>
           </div>
@@ -60,7 +60,7 @@ export default function PreviewStep({
             className="absolute right-2 top-2 rounded-lg border border-gray-200 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50 disabled:opacity-40"
             aria-label="Copy embed code"
           >
-            {copied ? <Check className="h-4 w-4 text-brand-teal" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="h-4 w-4 text-brand-teal" /> : <img src="/svgs/chatbot/copy.svg" alt="Copy" className="w-4 h-4" /> }
           </button>
         </div>
         <p className="mt-3 text-xs text-gray-500">

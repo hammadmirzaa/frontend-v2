@@ -27,7 +27,7 @@ export default function WizardStepper({ steps, currentIndex }) {
                 <div className="flex shrink-0 justify-center">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors sm:h-10 sm:w-10 md:h-11 md:w-11 ${
-                      filled ? 'bg-brand-teal text-white' : 'border-2 border-gray-200 bg-white text-gray-400'
+                      filled ? 'bg-brand-teal text-white' : ' bg-gray-500 text-gray-400'
                     }`}
                     aria-current={active ? 'step' : undefined}
                     aria-label={ariaLabel}
@@ -35,7 +35,7 @@ export default function WizardStepper({ steps, currentIndex }) {
                     {done ? (
                       <Check className="h-4 w-4 sm:h-[18px] sm:w-[18px] md:h-5 md:w-5" strokeWidth={2.75} aria-hidden />
                     ) : (
-                      <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5 md:h-[22px] md:w-[22px]" strokeWidth={2} aria-hidden />
+                      <img src={`/svgs/chatbot/${Icon}.svg`} alt={Icon} className="w-6 h-6" />
                     )}
                   </div>
                 </div>

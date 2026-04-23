@@ -146,7 +146,6 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     }
     if (activeTab === 'guardrails') {
       fetchGuardrails()
-      fetchAllGuardrails()
     }
   }, [activeTab, chatbotId])
 
@@ -221,10 +220,26 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     }
   }
 
+  /** Merge chatbot-linked guardrails (subset of fields) with full rows from GET /api/guardrails/ for dates & consistency */
+  const mergeLinkedGuardrails = (linkedPartial, allFull) => {
+    if (!Array.isArray(linkedPartial) || linkedPartial.length === 0) return []
+    const byId = new Map((allFull || []).map((g) => [g.id, g]))
+    return linkedPartial.map((p) => {
+      const full = byId.get(p.id)
+      return full ? { ...full, ...p } : p
+    })
+  }
+
   const fetchGuardrails = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/chatbots/${chatbotId}?include_details=true`)
-      const guardrailList = Array.isArray(response.data.guardrails) ? response.data.guardrails : []
+      const [chatbotRes, allRes] = await Promise.all([
+        axios.get(`${API_URL}/api/chatbots/${chatbotId}?include_details=true`),
+        axios.get(`${API_URL}/api/guardrails/`),
+      ])
+      const allList = Array.isArray(allRes.data) ? allRes.data : []
+      setAllGuardrails(allList)
+      const linked = Array.isArray(chatbotRes.data?.guardrails) ? chatbotRes.data.guardrails : []
+      const guardrailList = mergeLinkedGuardrails(linked, allList)
       setGuardrails(guardrailList)
       const firstGuardrail = guardrailList[0] || null
       setGuardrailId(firstGuardrail?.id || null)
@@ -576,9 +591,10 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
 
   const filteredGuardrails = guardrails.filter((g) => {
     const matchesSearch = (g.name || '').toLowerCase().includes(guardrailsQuery.trim().toLowerCase())
+    const rowActive = g.is_active !== false
     const matchesStatus =
       guardrailFilterStatus === 'all' ||
-      (guardrailFilterStatus === 'active' ? Boolean(g.is_active) : !Boolean(g.is_active))
+      (guardrailFilterStatus === 'active' ? rowActive : !rowActive)
     const matchesLinked =
       guardrailFilterLinkedChatbot === 'all' ||
       (guardrailFilterLinkedChatbot === 'linked' ? true : false)
@@ -631,14 +647,17 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     {
       id: 'status',
       label: 'Status',
-      render: (row) => (
-        <span
-          className="inline-flex rounded px-2 py-0.5 text-xs font-medium"
-          style={row.is_active ? { backgroundColor: '#e8f9ee', color: '#28a745' } : { backgroundColor: '#f3f4f6', color: '#9ca3af' }}
-        >
-          {row.is_active ? 'Active' : 'Inactive'}
-        </span>
-      ),
+      render: (row) => {
+        const active = row.is_active !== false
+        return (
+          <span
+            className="inline-flex rounded px-2 py-0.5 text-xs font-medium"
+            style={active ? { backgroundColor: '#e8f9ee', color: '#28a745' } : { backgroundColor: '#f3f4f6', color: '#9ca3af' }}
+          >
+            {active ? 'Active' : 'Inactive'}
+          </span>
+        )
+      },
     },
     {
       id: 'updated',
@@ -951,7 +970,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-2 block text-sm font-bold text-gray-900">Primary Color</label>
-                      <div className="flex items-center gap-2 rounded-lg bg-gray-50/90 px-3 py-2.5">
+                      <div className="flex items-center gap-2 rounded-lg bg-gray-50/90 px-3 py-1.5">
                         <input
                           type="text"
                           value={widgetConfig.primary_color}
@@ -959,7 +978,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                           className="w-full bg-transparent text-sm text-gray-900 outline-none"
                         />
                         <label className="cursor-pointer rounded-md p-1 text-brand-teal hover:bg-white">
-                          <Pencil className="h-4 w-4" />
+                          <img src="/svgs/chatbot/drop.svg" alt="Pencil" className="w-10 h-10" />
                           <input
                             type="color"
                             value={widgetConfig.primary_color}
@@ -971,7 +990,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                     </div>
                     <div>
                       <label className="mb-2 block text-sm font-bold text-gray-900">Secondary Color</label>
-                      <div className="flex items-center gap-2 rounded-lg bg-gray-50/90 px-3 py-2.5">
+                      <div className="flex items-center gap-2 rounded-lg bg-gray-50/90 px-3 py-1.5">
                         <input
                           type="text"
                           value={widgetConfig.secondary_color}
@@ -979,7 +998,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                           className="w-full bg-transparent text-sm text-gray-900 outline-none"
                         />
                         <label className="cursor-pointer rounded-md p-1 text-brand-teal hover:bg-white">
-                          <Pencil className="h-4 w-4" />
+                          <img src="/svgs/chatbot/drop.svg" alt="Pencil" className="w-10 h-10" />
                           <input
                             type="color"
                             value={widgetConfig.secondary_color}
@@ -1144,7 +1163,6 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
               {guardrails.length === 0 ? (
                 <div className="">
                   <EmptyState
-                    icon={Shield}
                     title="Your chatbot’s Guardrails are not configured."
                     description="Guardrails define the boundaries of what your bot can and cannot say, ensuring safe, compliant, and brand-aligned interactions."
                   >
@@ -1175,7 +1193,9 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   </div>
 
                   {sortedFilteredGuardrails.length === 0 ? (
-                    <div className="py-10 text-center text-sm text-gray-500">No guardrails match your search.</div>
+                    <div className="py-10 text-center text-sm text-gray-500">
+                      No guardrails match your search or filters.
+                    </div>
                   ) : (
                     <div className="overflow-hidden rounded-xl border border-gray-200">
                       <Table
@@ -1214,7 +1234,6 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
               {documents.length === 0 ? (
                 <div className="">
                   <EmptyState
-                    icon={FileText}
                     title="Your chatbot’s Knowledge Base is not configured."
                     description="The Knowledge Base provides the reference documents and data your bot uses to answer questions accurately and consistently."
                   >
@@ -1440,7 +1459,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
               placeholder="Search guardrails..."
               className="w-full max-w-none sm:max-w-md"
             />
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               onClick={() => {
@@ -1449,7 +1468,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
               }}
             >
               Create Guardrail
-            </Button>
+            </Button> */}
           </div>
 
           <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">

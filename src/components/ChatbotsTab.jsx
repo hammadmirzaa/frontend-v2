@@ -405,7 +405,7 @@ export default function ChatbotsTab({
           </div>
         </div>
 
-        <div className="overflow-y-auto p-5 bg-white rounded-xl h-auto">
+        <div className={`overflow-y-auto p-5 ${chatbots.length === 0 ?" ": "bg-white"}  rounded-xl h-auto`}>
           {subTab === 'deleted' && canManageDeletedChatbots ? (
             loadingDeleted ? (
               <div className="py-12 text-center text-gray-500">
@@ -454,7 +454,7 @@ export default function ChatbotsTab({
             </div>
           ) : chatbots.length === 0 ? (
             <EmptyState
-              icon={Bot}
+              icon="bot2"
               title="Your chatbot list is empty"
               description="Once you add a chatbot, it will appear here."
             />

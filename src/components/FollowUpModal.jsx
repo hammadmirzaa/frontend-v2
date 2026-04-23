@@ -1516,7 +1516,7 @@ export default function FollowUpModal({
                                 onClick={() =>
                                   handleActivityTypeChange(typeOption.value)
                                 }
-                                className={`rounded-lg border px-3 py-3 text-left transition ${
+                                className={`rounded-lg border px-3 py-4 text-left transition ${
                                   isActive
                                     ? "border-brand-teal bg-brand-teal/10"
                                     : "border-gray-200 bg-white hover:border-gray-300"

@@ -6,10 +6,8 @@ import {
   CalendarDays,
   ChevronDown,
   Clock3,
-  FileText,
   Mail,
   MessageCircle,
-  MessageSquare,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -33,6 +31,19 @@ import { formatDateDMY } from '../utils/formatDateDMY'
 import { cycleTableSort } from '../utils/tableSort'
 
 const API_URL = config.API_URL
+
+/** Icons in public/svgs/leads/ — filenames differ from API enums */
+function leadsFollowupIconSrc(kind) {
+  const file =
+    kind === 'call' || kind === 'calls'
+      ? 'call'
+      : kind === 'email' || kind === 'emails'
+        ? 'email'
+        : kind === 'both' || kind === 'meetings'
+          ? 'product-demo'
+          : 'activity'
+  return `/svgs/leads/${file}.svg`
+}
 
 export default function LeadsTab() {
   const [leads, setLeads] = useState([])
@@ -412,12 +423,6 @@ export default function LeadsTab() {
       .slice(0, 4)
   }, [followups, leads, scheduledTab])
 
-  const followupTypeIcon = (type) => {
-    if (type === 'call') return <Phone className="h-5 w-5 text-blue-600" />
-    if (type === 'email') return <Mail className="h-5 w-5 text-green-600" />
-    return <MessageSquare className="h-5 w-5 text-violet-600" />
-  }
-
   const detailStatus = selectedLead ? normalizeLeadStatus(selectedLead.status) : 'new'
   const detailPriority = selectedLead ? resolvePriority(selectedLead) : 'low'
   const detailPriorityStyle = {
@@ -513,13 +518,6 @@ export default function LeadsTab() {
       .sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime())
       .filter((item) => (timelineFilter === 'all' ? true : item.type === timelineFilter))
   }, [followups, selectedLead, timelineFilter])
-
-  const timelineTypeIcon = (type) => {
-    if (type === 'calls') return <Phone className="h-4 w-4 text-blue-600" />
-    if (type === 'emails') return <Mail className="h-4 w-4 text-violet-600" />
-    if (type === 'meetings') return <Video className="h-4 w-4 text-green-600" />
-    return <FileText className="h-4 w-4 text-gray-500" />
-  }
 
   return (
     <>
@@ -804,9 +802,21 @@ export default function LeadsTab() {
                           <div className="space-y-4">
                             {leadActivities.map((activity) => (
                               <div key={activity.id} className="flex items-start gap-3">
-                                <div className="rounded-lg bg-blue-100 p-2 text-blue-600">{followupTypeIcon(activity.followup_type)}</div>
+                                  <img
+                                    src={leadsFollowupIconSrc(activity.followup_type)}
+                                    alt=""
+                                    className="h-10 w-10"
+                                  />
                                 <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-gray-900">{activity.followup_type === 'call' ? 'Follow-up Call Scheduled' : 'Follow-up Activity'}</p>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {activity.followup_type === 'call'
+                                      ? 'Follow-up Call Scheduled'
+                                      : activity.followup_type === 'email'
+                                        ? 'Sent Proposal Email'
+                                        : activity.followup_type === 'both'
+                                          ? 'Demo Meeting'
+                                          : 'Follow-up Activity'}
+                                  </p>
                                   <p className="line-clamp-1 text-sm text-gray-500">{activity.internal_notes || activity.message_content || activity.email_subject || 'Activity logged'}</p>
                                   <p className="text-xs text-gray-400">{formatDateDMY(activity.scheduled_at)}</p>
                                 </div>
@@ -906,13 +916,13 @@ export default function LeadsTab() {
                         <div className="absolute bottom-2 left-4 top-2 w-px bg-gray-200" />
                         {timelineItems.map((item) => (
                           <div key={item.id} className="relative px-2">
-                            <div className="absolute -left-8 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200">
-                              {timelineTypeIcon(item.type)}
+                            <div className="absolute -left-8 top-0 flex items-center justify-center rounded-full">
+                              <img src={leadsFollowupIconSrc(item.type)} alt="" className="h-8 w-8" />
                             </div>
                             <div className='rounded-xl bg-gray-50 p-4 ' >
                             <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                               <div>
-                                <h4 className="text-sm font-bold text-gray-900">{item.title}</h4>
+                                <h4 className="text-sm font-semibold text-gray-900">{item.title}</h4>
                                 <p className="text-xs text-gray-400 mt-1">
                                   {formatDateDMY(item.when)} • by {item.owner}
                                 </p>
@@ -952,9 +962,7 @@ export default function LeadsTab() {
                         {selectedLead.messages.map((message) => (
                           <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}>
                             <div className={`flex max-w-[92%] items-start gap-3 ${message.role === 'assistant' ? 'flex-row-reverse' : ''}`}>
-                              <div className={`mt-1 rounded-full bg-[${COLORS.PLAYGROUND_CHAT_HIGHLIGHT_BG}] p-2 text-brand-teal`}>
-                                <User className="h-4 w-4" />
-                              </div>
+                              <img src={`/svgs/leads/${message.role === 'assistant' ? 'user2' : 'user'}.svg`} alt={message.role === 'assistant' ? 'Assistant' : 'User'} className="h-10 w-10" />
                               <div className={message.role === 'assistant' ? 'text-right' : 'text-left'}>
                                 <p className="mb-2 text-sm font-semibold text-gray-900">
                                   {message.role === 'assistant' ? 'Assistant' : selectedLead.name}
@@ -1040,9 +1048,21 @@ export default function LeadsTab() {
                         <div key={item.id} className="rounded-xl border border-gray-200 bg-white p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-start gap-3">
-                              <div className="rounded-xl bg-gray-100 p-3">{followupTypeIcon(item.followup_type)}</div>
+                              <img
+                                src={leadsFollowupIconSrc(item.followup_type)}
+                                alt={item.followup_type || 'follow-up'}
+                                className="h-8 w-8 shrink-0"
+                              />
                               <div>
-                                <p className="text-sm font-semibold text-gray-900">{item.followup_type === 'call' ? 'Follow-up Call' : 'Scheduled Follow-up'}</p>
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {item.followup_type === 'call'
+                                    ? 'Follow-up Call'
+                                    : item.followup_type === 'email'
+                                      ? 'Email Follow-up'
+                                      : item.followup_type === 'both'
+                                        ? 'Demo / Meeting'
+                                        : 'Scheduled Follow-up'}
+                                </p>
                                 <p className="text-xs text-gray-500">
                                   {item.lead?.name || 'Unknown Lead'} {item.lead?.company ? `• ${item.lead.company}` : ''}
                                 </p>
@@ -1086,21 +1106,21 @@ export default function LeadsTab() {
                       <div className="mb-3 rounded-xl bg-blue-100 p-3 text-blue-600">
                         <Target className="h-6 w-6" />
                       </div>
-                      <p className="text-sm font-bold text-gray-900">Track Progress</p>
+                      <p className="text-sm font-semibold text-gray-900">Track Progress</p>
                       <p className="mt-1 text-xs text-gray-500">Monitor lead status from initial contact to closed deal</p>
                     </div>
                     <div className="flex flex-col items-center">
                       <div className="mb-3 rounded-xl bg-violet-100 p-3 text-violet-600">
                         <CalendarCheck2 className="h-6 w-6" />
                       </div>
-                      <p className="text-sm font-bold text-gray-900">Schedule Activities</p>
+                      <p className="text-sm font-semibold text-gray-900">Schedule Activities</p>
                       <p className="mt-1 text-xs text-gray-500">Never miss a follow-up with automated reminders</p>
                     </div>
                     <div className="flex flex-col items-center">
                       <div className="mb-3 rounded-xl bg-green-100 p-3 text-green-600">
                         <BarChart3 className="h-6 w-6" />
                       </div>
-                      <p className="text-sm font-bold text-gray-900">Analyze Data</p>
+                      <p className="text-sm font-semibold text-gray-900">Analyze Data</p>
                       <p className="mt-1 text-xs text-gray-500">Get insights with conversion rates and performance metrics</p>
                     </div>
                   </div>

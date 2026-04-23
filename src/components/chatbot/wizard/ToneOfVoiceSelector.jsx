@@ -1,10 +1,10 @@
 import { Smile, Laugh, UserRound, Pencil } from 'lucide-react'
 
 const OPTIONS = [
-  { id: 'neutral', label: 'Neutral', Icon: Smile },
-  { id: 'friendly', label: 'Friendly', Icon: Laugh },
-  { id: 'formal', label: 'Formal', Icon: UserRound },
-  { id: 'custom', label: 'Custom', Icon: Pencil },
+  { id: 'neutral', label: 'Neutral', Icon: "neutral" },
+  { id: 'friendly', label: 'Friendly', Icon: "friendly" },
+  { id: 'formal', label: 'Formal', Icon: "formal" },
+  { id: 'custom', label: 'Custom', Icon: "custom" },
 ]
 
 export default function ToneOfVoiceSelector({ value, onChange }) {
@@ -27,7 +27,7 @@ export default function ToneOfVoiceSelector({ value, onChange }) {
               }`}
             >
               <div className="flex items-center gap-2 justify-center">
-                <Icon className="h-6 w-6" strokeWidth={1.75} />
+                <img src={`/svgs/chatbot/${Icon}.svg`} alt={Icon} className="w-6 h-6" />
                 <span className="text-xs font-medium">{opt.label}</span>
               </div>
             </button>

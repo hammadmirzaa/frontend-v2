@@ -45,8 +45,8 @@ export default function KnowledgeStep({
             onDrop={onDropZoneDrop}
             className="flex w-full flex-col items-center justify-center rounded-xl border-[1.5px] border-dashed border-gray-200 px-6 py-10 text-center transition-colors hover:border-brand-teal/40 hover:bg-brand-teal/[0.03]"
           >
-            <Upload className="mb-2 h-10 w-10 text-brand-teal" strokeWidth={1.5} />
-            <span className="text-lg font-bold text-black">Click here to upload or drag your file here</span>
+            <img src="/svgs/chatbot/upload.svg" alt="Upload" className="w-15 h-15" />
+            <span className="text-base font-semibold text-black mt-2">Click here to upload or drag your file here</span>
             <span className="mt-1 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX, TXT</span>
           </button>
           <input ref={fileInputRef} type="file" className="hidden" multiple accept=".pdf,.doc,.docx,.txt" onChange={onFilePick} />
@@ -59,7 +59,7 @@ export default function KnowledgeStep({
                   className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm"
                 >
                   <span className="flex min-w-0 items-center gap-2 text-gray-800">
-                    <FileIcon className="h-4 w-4 shrink-0 text-gray-500" />
+                    <img src="/svgs/chatbot/doc.svg" alt="File" className="w-4 h-4 shrink-0" />
                     <span className="truncate">{u.file.name}</span>
                   </span>
                   <button
@@ -83,7 +83,7 @@ export default function KnowledgeStep({
             className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
           >
             <span className="flex items-center gap-4">
-              <Pencil className="h-5 w-5 text-brand-teal" strokeWidth={2} />
+              <img src="/svgs/chatbot/write-manually.svg" alt="Write manually" className="w-10 h-10" />
               <span>
                 <span className="block text-base font-semibold text-gray-900">Write manually</span>
                 <span className="text-xs text-gray-500">Manually write your own specific knowledge.</span>

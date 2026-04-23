@@ -21,11 +21,7 @@ export function SearchInput({
 }) {
   return (
     <div className={cn('relative max-w-96', className)}>
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-        strokeWidth={2}
-        aria-hidden
-      />
+      <img src="/svgs/playground/magnifier.svg" alt="Search" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2" />
       <input
         type="search"
         placeholder={placeholder}

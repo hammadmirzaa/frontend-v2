@@ -860,12 +860,12 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
                     <span className="max-w-[160px] truncate">
                       {selectedChatbot.name}
                     </span>
-                    <ChevronDown size={16} className="shrink-0 opacity-70" />
+                    <img src="/svgs/playground/exchange.svg" alt="Chevron Down" className="w-4 h-4 shrink-0 opacity-70" />
                   </>
                 ) : (
                   <>
                     <span>Select chatbot</span>
-                    <ChevronDown size={16} className="shrink-0 opacity-70" />
+                    <img src="/svgs/playground/exchange.svg" alt="Chevron Down" className="w-4 h-4 shrink-0 opacity-70" />
                   </>
                 )}
               </Button>
@@ -895,9 +895,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
                   )}
                 >
                   {msg.role === "assistant" && (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-teal text-white">
-                      <Bot size={18} strokeWidth={2} aria-hidden />
-                    </div>
+                      <img src="/svgs/playground/bot.svg" alt="Bot" className="w-8 h-8" />
                   )}
                   <div
                     className={cn(
@@ -948,9 +946,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
                     </div>
                   </div>
                   {msg.role === "user" && (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-teal text-white">
-                      <User size={18} strokeWidth={2} aria-hidden />
-                    </div>
+                      <img src="/svgs/playground/user.svg" alt="User" className="w-8 h-8" />
                   )}
                 </div>
                 );

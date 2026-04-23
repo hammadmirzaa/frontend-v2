@@ -2,10 +2,10 @@ import { FileText, Shield, BookOpen, Eye } from 'lucide-react'
 
 /** labelLines — two lines under each step (matches Create Chatbot stepper design). */
 export const STEPS = [
-  { id: 'basic', labelLines: ['Basic', 'Information'], Icon: FileText },
-  { id: 'guardrails', labelLines: ['Guardrails &', 'Restrictions'], Icon: Shield },
-  { id: 'knowledge', labelLines: ['Knowledge', 'Base'], Icon: BookOpen },
-  { id: 'preview', labelLines: ['Preview'], Icon: Eye },
+  { id: 'basic', labelLines: ['Basic', 'Information'], Icon: "basicinformation" },
+  { id: 'guardrails', labelLines: ['Guardrails &', 'Restrictions'], Icon: "gr" },
+  { id: 'knowledge', labelLines: ['Knowledge', 'Base'], Icon: "kb" },
+  { id: 'preview', labelLines: ['Preview'], Icon: "preview" },
 ]
 
 export function mapToneToPersonality(tone) {

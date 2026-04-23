@@ -36,7 +36,7 @@ export default function AuthPasswordField({
           onClick={onToggleVisibility}
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? <Eye className="h-5 w-5" strokeWidth={1.75} /> : <EyeOff className="h-5 w-5" strokeWidth={1.75} />}
+          {showPassword ? <Eye className="h-5 w-5" strokeWidth={1.75} /> : <EyeOff className="h-5 w-5  " style={{color:'black'}} strokeWidth={1.75} />}
         </button>
       </div>
     </div>

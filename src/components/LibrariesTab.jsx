@@ -572,11 +572,11 @@ export default function LibrariesTab() {
                   disabled
                   title="Coming soon"
                   className={cn(
-                    'flex flex-col items-start rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 text-left opacity-60',
+                    'flex flex-col items-start rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-left opacity-60',
                     'cursor-not-allowed'
                   )}
                 >
-                  <PenSquare className="h-8 w-8 text-brand-teal/50" strokeWidth={1.5} />
+                  <img src="/svgs/knowledgebase/write-manually.svg" alt="Write manually" className="w-12 h-12" />
                   <span className="mt-3 text-sm font-semibold text-gray-700">Write manually</span>
                   <span className="mt-1 text-xs leading-relaxed text-gray-500">
                     Manually write your own specific knowledge.
@@ -590,13 +590,13 @@ export default function LibrariesTab() {
                   type="button"
                   onClick={() => setInputMode('upload')}
                   className={cn(
-                    'flex flex-col items-start rounded-xl border-2 bg-white p-4 text-left transition-colors',
+                    'flex flex-col items-start rounded-xl border bg-white p-4 text-left transition-colors',
                     inputMode === 'upload'
                       ? 'border-brand-teal shadow-sm ring-1 ring-brand-teal/15'
                       : 'border-gray-200 hover:border-gray-300'
                   )}
                 >
-                  <Upload className="h-8 w-8 text-brand-teal" strokeWidth={1.5} />
+                  <img src="/svgs/knowledgebase/upload.svg" alt="Upload" className="w-12 h-12" />
                   <span className="mt-3 text-sm font-semibold text-gray-900">Upload a Document</span>
                   <span className="mt-1 text-xs leading-relaxed text-gray-500">
                     Train your chatbot using your documents.
@@ -715,14 +715,14 @@ export default function LibrariesTab() {
           </button>
         </div> */}
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ${documents.length === 0 ? " ": "border border-gray-100 bg-white shadow-sm"}`}>
           {loading ? (
             <div className="flex flex-1 items-center justify-center py-24">
               <Spinner size="lg" />
             </div>
           ) : documents.length === 0 ? (
             <EmptyState
-              icon={AlertCircle}
+              icon="guardrails"
               title="No Knowledge Base yet!"
               description="Add Knowledge base by uploading a document or by writing manually."
             >
