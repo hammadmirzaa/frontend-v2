@@ -27,11 +27,14 @@ import { mapToneToPersonality } from './chatbot/wizard/wizardConstants'
 import ToneOfVoiceSelector from './chatbot/wizard/ToneOfVoiceSelector'
 import { useAuth } from '../contexts/AuthContext'
 import EmptyState from './EmptyState'
+import ManualKnowledgeEntryView from './ManualKnowledgeEntryView'
 import { formatDateDMY } from '../utils/formatDateDMY'
 import { COLORS } from '../lib/designTokens'
 import { cycleTableSort } from '../utils/tableSort'
+import { cn } from '../utils/cn'
 
 const API_URL = config.API_URL
+const ACCEPT_UPLOAD = '.pdf,.doc,.docx,.txt,.csv,.tsv,.xls,.xlsx,.json'
 /** Paginate guardrails / knowledge tables inside chatbot detail */
 const DETAIL_TABLE_PAGE_SIZE = 6
 
@@ -80,17 +83,21 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
 
   const [documents, setDocuments] = useState([])
   const [documentsQuery, setDocumentsQuery] = useState('')
-  const [allTenantDocuments, setAllTenantDocuments] = useState([])
-  const [knowledgePickerOpen, setKnowledgePickerOpen] = useState(false)
-  const [knowledgePickerQuery, setKnowledgePickerQuery] = useState('')
-  const [pendingKnowledgeDocId, setPendingKnowledgeDocId] = useState(null)
-  const [attachingKnowledgeDocId, setAttachingKnowledgeDocId] = useState(null)
-  const [updatingKnowledgeDocId, setUpdatingKnowledgeDocId] = useState(null)
+  const [createKnowledgeModalOpen, setCreateKnowledgeModalOpen] = useState(false)
+  const [createKnowledgeStep, setCreateKnowledgeStep] = useState('pick')
+  const [createKnowledgeInputMode, setCreateKnowledgeInputMode] = useState('upload')
+  const [manualKnowledgeEditorOpen, setManualKnowledgeEditorOpen] = useState(false)
+  const [createKnowledgeDragOver, setCreateKnowledgeDragOver] = useState(false)
+  const [limitModalOpen, setLimitModalOpen] = useState(false)
+  const [limitMessage, setLimitMessage] = useState(
+    'Document limit reached. Please upgrade your plan or purchase additional units.',
+  )
   const [uploading, setUploading] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [documentToDelete, setDocumentToDelete] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const fileInputRef = useRef(null)
+  const createKnowledgeFileInputRef = useRef(null)
 
   const [guardrails, setGuardrails] = useState([])
   const [allGuardrails, setAllGuardrails] = useState([])
@@ -344,7 +351,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
   }
 
   const uploadFiles = async (files) => {
-    if (files.length === 0) return
+    if (files.length === 0) return false
 
     setUploading(true)
     const formData = new FormData()
@@ -355,7 +362,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
 
     try {
       const response = await axios.post(`${API_URL}/api/documents/upload?chatbot_id=${chatbotId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
       await fetchDocuments()
       if (response.data?.length > 0) {
@@ -363,8 +370,18 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
       }
       const count = response.data.length
       showToast(`${count} document${count > 1 ? 's' : ''} uploaded and ${count > 1 ? 'are' : 'is'} being processed!`, 'success')
+      if (onChatbotUpdated) onChatbotUpdated()
+      return true
     } catch (error) {
-      showToast(formatApiErrorDetail(error, 'Failed to upload document(s)'), 'error')
+      const code = error?.response?.data?.error_code || error?.response?.data?.detail?.error_code
+      const msg = error?.response?.data?.message || error?.response?.data?.detail?.message
+      if (code === 'DOCUMENT_LIMIT_REACHED') {
+        setLimitMessage(msg || limitMessage)
+        setLimitModalOpen(true)
+      } else {
+        showToast(formatApiErrorDetail(error, 'Failed to upload document(s)'), 'error')
+      }
+      return false
     } finally {
       setUploading(false)
     }
@@ -538,81 +555,57 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     }
   }
 
-  const refreshAllTenantDocuments = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/documents/`)
-      setAllTenantDocuments(Array.isArray(res.data) ? res.data : [])
-    } catch {
-      /* keep existing list */
+  const openCreateKnowledgeModal = () => {
+    setManualKnowledgeEditorOpen(false)
+    setCreateKnowledgeStep('pick')
+    setCreateKnowledgeInputMode('upload')
+    setCreateKnowledgeDragOver(false)
+    setCreateKnowledgeModalOpen(true)
+  }
+
+  const closeCreateKnowledgeModal = () => {
+    if (uploading) return
+    setCreateKnowledgeModalOpen(false)
+    setCreateKnowledgeStep('pick')
+    setCreateKnowledgeDragOver(false)
+    setCreateKnowledgeInputMode('upload')
+  }
+
+  const closeManualKnowledgeEditor = () => {
+    setManualKnowledgeEditorOpen(false)
+    setCreateKnowledgeStep('pick')
+    setCreateKnowledgeInputMode('upload')
+  }
+
+  const goNextFromCreateKnowledgePick = () => {
+    if (createKnowledgeInputMode === 'manual') {
+      setCreateKnowledgeModalOpen(false)
+      setManualKnowledgeEditorOpen(true)
+      return
+    }
+    setCreateKnowledgeStep('upload')
+  }
+
+  const handleCreateKnowledgeFilePick = async (e) => {
+    const files = Array.from(e.target.files || [])
+    const ok = await uploadFiles(files)
+    e.target.value = ''
+    if (ok) {
+      closeCreateKnowledgeModal()
+      setKnowledgeListPage(1)
     }
   }
 
-  const openKnowledgePicker = async () => {
-    try {
-      const [allRes, linkedRes] = await Promise.all([
-        axios.get(`${API_URL}/api/documents/`),
-        axios.get(`${API_URL}/api/documents/?chatbot_id=${encodeURIComponent(chatbotId)}`),
-      ])
-      const allList = Array.isArray(allRes.data) ? allRes.data : []
-      const linkedList = Array.isArray(linkedRes.data) ? linkedRes.data : []
-      setAllTenantDocuments(allList)
-      setDocuments(linkedList)
-      const attachedIds = new Set(linkedList.map((d) => d.id))
-      const firstAvailable = allList.find((d) => !attachedIds.has(d.id))
-      setPendingKnowledgeDocId(firstAvailable?.id ?? null)
-      setKnowledgePickerQuery('')
-      setKnowledgePickerOpen(true)
-    } catch (error) {
-      showToast(formatApiErrorDetail(error, 'Failed to load knowledge library'), 'error')
+  const handleCreateKnowledgeDrop = async (e) => {
+    e.preventDefault()
+    setCreateKnowledgeDragOver(false)
+    const files = Array.from(e.dataTransfer.files || [])
+    const ok = await uploadFiles(files)
+    if (ok) {
+      closeCreateKnowledgeModal()
+      setKnowledgeListPage(1)
     }
   }
-
-  const attachSelectedKnowledge = async () => {
-    if (!pendingKnowledgeDocId) return
-    setAttachingKnowledgeDocId(pendingKnowledgeDocId)
-    try {
-      await axios.post(`${API_URL}/api/documents/${pendingKnowledgeDocId}/assign-chatbot`, {
-        chatbot_id: chatbotId,
-      })
-      await fetchDocuments()
-      await refreshAllTenantDocuments()
-      setKnowledgePickerOpen(false)
-      setPendingKnowledgeDocId(null)
-      showToast('Knowledge linked to this chatbot successfully', 'success')
-      if (onChatbotUpdated) onChatbotUpdated()
-    } catch (error) {
-      showToast(formatApiErrorDetail(error, 'Failed to add knowledge'), 'error')
-    } finally {
-      setAttachingKnowledgeDocId(null)
-    }
-  }
-
-  // const handleUnaddKnowledgeFromModal = async (doc) => {
-  //   setUpdatingKnowledgeDocId(doc.id)
-  //   try {
-  //     await axios.post(`${API_URL}/api/documents/${doc.id}/assign-chatbot`, {
-  //       chatbot_id: null,
-  //     })
-  //     await fetchDocuments()
-  //     await refreshAllTenantDocuments()
-  //     showToast('Knowledge removed from this chatbot', 'success')
-  //     if (onChatbotUpdated) onChatbotUpdated()
-  //   } catch (error) {
-  //     showToast(formatApiErrorDetail(error, 'Failed to remove knowledge from chatbot'), 'error')
-  //   } finally {
-  //     setUpdatingKnowledgeDocId(null)
-  //   }
-  // }
-
-  const filteredKnowledgePickerDocs = useMemo(() => {
-    const q = knowledgePickerQuery.trim().toLowerCase()
-    return allTenantDocuments.filter((d) => {
-      if (!q) return true
-      return (d.filename || '').toLowerCase().includes(q)
-    })
-  }, [allTenantDocuments, knowledgePickerQuery])
-
-  const knowledgePickerPrimaryText = pendingKnowledgeDocId ? 'Add Knowledge' : 'Done'
 
   const onGuardrailTableSort = useCallback((columnId) => {
     setGuardrailTableSort((prev) => cycleTableSort(columnId, prev))
@@ -831,7 +824,8 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
   return (
     <>
       <ToastContainer />
-      <div className="flex min-h-[min(720px,calc(100vh-5rem))] flex-1 flex-col bg-[#FAFBFC] p-6">
+
+      <div className="relative flex min-h-[min(720px,calc(100vh-5rem))] flex-1 flex-col bg-[#FAFBFC] p-6">
         <div className="flex items-center justify-between border-b border-gray-100 pb-5">
           <div className="flex items-center gap-4">
             <button type="button" onClick={onBack} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100">
@@ -1258,7 +1252,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.doc,.docx,.txt,.csv,.tsv,.xls,.xlsx,.json"
+                accept={ACCEPT_UPLOAD}
                 multiple
                 onChange={handleFilePick}
               />
@@ -1268,7 +1262,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   description="The Knowledge Base provides the reference documents and data your bot uses to answer questions accurately and consistently."
                 >
                   <div className="mt-6">
-                    <Button type="button" variant="primary" onClick={openKnowledgePicker}>
+                    <Button type="button" variant="primary" onClick={openCreateKnowledgeModal}>
                       Setup Now
                     </Button>
                   </div>
@@ -1294,8 +1288,8 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                         Filters
                         <ChevronDown className="h-4 w-4 text-gray-500" />
                       </button> */}
-                      <Button type="button" variant="primary" onClick={openKnowledgePicker}>
-                        Add Knowledge
+                      <Button type="button" variant="primary" onClick={openCreateKnowledgeModal}>
+                        Create Knowledge
                       </Button>
                       {/* <Button
                         type="button"
@@ -1337,6 +1331,29 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
             </>
           )}
         </div>
+
+        {manualKnowledgeEditorOpen ? (
+          <div className="absolute inset-0 z-[35] overflow-y-auto rounded-xl bg-[#F4F5F7] shadow-[0_0_0_1px_rgba(0,0,0,0.06)]">
+            <ManualKnowledgeEntryView
+              chatbotId={chatbotId}
+              chatbotName={chatbotName}
+              showToast={showToast}
+              onClose={closeManualKnowledgeEditor}
+              onSaved={async () => {
+                await fetchDocuments()
+                showToast('Manual knowledge saved and is being processed.', 'success')
+                setDocumentsQuery('')
+                setKnowledgeListPage(1)
+                if (onChatbotUpdated) onChatbotUpdated()
+              }}
+              onLimitReached={(msg) => {
+                setLimitMessage(msg || limitMessage)
+                setLimitModalOpen(true)
+              }}
+              limitMessage={limitMessage}
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* Delete Document Modal */}
@@ -1586,134 +1603,145 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
       </Modal>
 
       <Modal
-        isOpen={knowledgePickerOpen}
-        onClose={() => {
-          setKnowledgePickerOpen(false)
-          setPendingKnowledgeDocId(null)
-          setUpdatingKnowledgeDocId(null)
-        }}
-        title="Add Knowledge"
-        panelClassName="max-w-2xl"
+        isOpen={createKnowledgeModalOpen}
+        onClose={closeCreateKnowledgeModal}
+        title="Create Knowledge"
+        subtitle={createKnowledgeStep === 'pick' ? 'Choose how you want to add knowledge to this chatbot.' : undefined}
+        showCloseButton={!uploading}
+        panelClassName="max-w-[640px] max-h-[min(92vh,620px)]"
       >
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <SearchInput
-              value={knowledgePickerQuery}
-              onChange={(e) => setKnowledgePickerQuery(e.target.value)}
-              placeholder="Search documents..."
-              className="w-full"
-            />
-            {/* <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setKnowledgePickerOpen(false)
-                fileInputRef.current?.click()
-              }}
-            >
-              Upload new file
-            </Button> */}
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
+          {createKnowledgeStep === 'pick' ? (
+            <>
+              <p className="text-sm text-gray-600">
+                New knowledge will be attached to{' '}
+                <span className="font-semibold text-gray-900">{chatbotName || 'this chatbot'}</span>.
+              </p>
 
-          <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-            {filteredKnowledgePickerDocs.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">
-                No documents in your workspace yet. Add files from the Knowledge Base tab, then link them here.
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setCreateKnowledgeInputMode('manual')}
+                  className={cn(
+                    'flex flex-col items-start rounded-xl border bg-white p-4 text-left transition-colors',
+                    createKnowledgeInputMode === 'manual'
+                      ? 'border-brand-teal shadow-sm ring-1 ring-brand-teal/15'
+                      : 'border-gray-200 hover:border-gray-300',
+                  )}
+                >
+                  <img src="/svgs/knowledgebase/write-manually.svg" alt="" className="h-12 w-12" />
+                  <span className="mt-3 text-sm font-semibold text-gray-900">Write manually</span>
+                  <span className="mt-1 text-xs leading-relaxed text-gray-500">
+                    Manually write your own specific knowledge.
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCreateKnowledgeInputMode('upload')}
+                  className={cn(
+                    'flex flex-col items-start rounded-xl border bg-white p-4 text-left transition-colors',
+                    createKnowledgeInputMode === 'upload'
+                      ? 'border-brand-teal shadow-sm ring-1 ring-brand-teal/15'
+                      : 'border-gray-200 hover:border-gray-300',
+                  )}
+                >
+                  <img src="/svgs/knowledgebase/upload.svg" alt="" className="h-12 w-12" />
+                  <span className="mt-3 text-sm font-semibold text-gray-900">Upload a Document</span>
+                  <span className="mt-1 text-xs leading-relaxed text-gray-500">
+                    Train your chatbot using your documents.
+                  </span>
+                </button>
               </div>
-            ) : (
-              filteredKnowledgePickerDocs.map((doc) => {
-                const attached = doc.chatbot_id === chatbotId
-                const selected = pendingKnowledgeDocId === doc.id
-                const elsewhere = Boolean(doc.chatbot_id && doc.chatbot_id !== chatbotId)
-                return (
-                  <div
-                    key={doc.id}
-                    className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
-                      attached
-                        ? 'border-gray-200 bg-gray-50'
-                        : selected
-                          ? 'border-brand-teal bg-brand-teal/[0.06]'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-gray-900">{doc.filename || 'Document'}</p>
-                        <p className="mt-0.5 text-xs text-gray-500">
-                          {attached
-                            ? 'Linked to this chatbot'
-                            : elsewhere
-                              ? 'Linked to another chatbot — adding moves it to this bot'
-                              : 'Available from your workspace knowledge library'}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {attached ? (
-                          <>
-                            <span className="text-xs font-semibold text-gray-500">Added</span>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="px-3 py-1.5 text-xs"
-                              onClick={() => handleUnaddKnowledgeFromModal(doc)}
-                              disabled={updatingKnowledgeDocId === doc.id}
-                            >
-                              {updatingKnowledgeDocId === doc.id ? 'Unadding…' : 'Unadd'}
-                            </Button>
-                          </>
-                        ) : selected ? (
-                          <span className="text-xs font-semibold text-brand-teal">Selected</span>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="px-3 py-1.5 text-xs"
-                            onClick={() => setPendingKnowledgeDocId(doc.id)}
-                          >
-                            Select
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
 
-          <div className="mt-4 flex shrink-0 justify-end gap-3 border-t border-gray-100 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setKnowledgePickerOpen(false)
-                setPendingKnowledgeDocId(null)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={Boolean(attachingKnowledgeDocId)}
-              onClick={() => {
-                if (pendingKnowledgeDocId) {
-                  attachSelectedKnowledge()
-                  return
-                }
-                setKnowledgePickerOpen(false)
-              }}
-            >
-              {attachingKnowledgeDocId ? (
-                <>
-                  <Spinner size="sm" className="text-white" />
-                  Adding…
-                </>
-              ) : (
-                knowledgePickerPrimaryText
-              )}
-            </Button>
-          </div>
+              <div className="mt-auto flex justify-between gap-3 border-t border-gray-100 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={closeCreateKnowledgeModal}
+                  disabled={uploading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className="w-full"
+                  onClick={goNextFromCreateKnowledgePick}
+                  disabled={uploading}
+                >
+                  Next
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <input
+                ref={createKnowledgeFileInputRef}
+                type="file"
+                className="hidden"
+                accept={ACCEPT_UPLOAD}
+                multiple
+                onChange={handleCreateKnowledgeFilePick}
+              />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Select File</p>
+                <button
+                  type="button"
+                  onDragEnter={() => setCreateKnowledgeDragOver(true)}
+                  onDragLeave={() => setCreateKnowledgeDragOver(false)}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setCreateKnowledgeDragOver(true)
+                  }}
+                  onDrop={handleCreateKnowledgeDrop}
+                  onClick={() => createKnowledgeFileInputRef.current?.click()}
+                  disabled={uploading}
+                  className={cn(
+                    'mt-3 flex w-full flex-col items-center rounded-xl border-2 border-dashed px-6 py-10 transition-colors',
+                    createKnowledgeDragOver
+                      ? 'border-brand-teal bg-brand-teal/[0.04]'
+                      : 'border-gray-200 bg-gray-50/80 hover:border-gray-300',
+                    uploading && 'pointer-events-none opacity-60',
+                  )}
+                >
+                  <FileText className="h-10 w-10 text-brand-teal" strokeWidth={1.25} />
+                  <span className="mt-4 text-sm font-semibold text-gray-900">
+                    Click here to upload or drag your file here
+                  </span>
+                  <span className="mt-2 text-xs text-gray-500">Supported formats: PDF, DOC, DOCX, TXT, and more</span>
+                </button>
+              </div>
+
+              <div className="mt-auto flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-4">
+                <Button type="button" variant="outline" onClick={() => setCreateKnowledgeStep('pick')} disabled={uploading}>
+                  Back
+                </Button>
+                <Button type="button" variant="outline" onClick={closeCreateKnowledgeModal} disabled={uploading}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => createKnowledgeFileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Spinner size="sm" className="text-white" /> : null}
+                  {uploading ? 'Uploading…' : 'Upload Knowledge'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      <Modal isOpen={limitModalOpen} onClose={() => setLimitModalOpen(false)} title="Document limit">
+        <p className="text-sm text-gray-700">{limitMessage}</p>
+        <div className="mt-6 flex justify-end">
+          <Button type="button" variant="primary" onClick={() => setLimitModalOpen(false)}>
+            OK
+          </Button>
         </div>
       </Modal>
 
