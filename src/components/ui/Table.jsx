@@ -2,6 +2,12 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { cn } from '../../utils/cn'
 import { COLORS } from '../../lib/designTokens'
 
+/** Default max height for dashboard tables; grows with content, scrolls when taller. */
+export const TABLE_VIEWPORT_MAX_HEIGHT_CLASS = 'max-h-[calc(100vh-26rem)]'
+
+/** @deprecated Use `TABLE_VIEWPORT_MAX_HEIGHT_CLASS` */
+export const TABLE_VIEWPORT_HEIGHT_CLASS = TABLE_VIEWPORT_MAX_HEIGHT_CLASS
+
 /**
  * @template T
  * @typedef {object} TableColumn
@@ -46,7 +52,8 @@ function getCellContent(row, col) {
  * @param {(row: T) => string} props.keyExtractor
  * @param {string} [props.headerBackground]
  * @param {import('react').ReactNode} [props.sortIconPlaceholder]
- * @param {string} [props.className]
+ * @param {string} [props.className] — merged into the scroll container (padding, etc.)
+ * @param {string} [props.maxHeightClassName] — max-height utilities; default `TABLE_VIEWPORT_MAX_HEIGHT_CLASS`
  * @param {string} [props.minWidth]
  * @param {(columnId: string) => void} [props.onSortClick]
  * @param {string | null} [props.sortColumnId] — active sort column, or null for original order
@@ -60,6 +67,9 @@ export function Table({
   headerBackground,
   sortIconPlaceholder,
   className,
+  maxHeightClassName = TABLE_VIEWPORT_MAX_HEIGHT_CLASS,
+  /** @deprecated Use maxHeightClassName */
+  heightClassName,
   minWidth = '640px',
   onSortClick,
   onRowClick,
@@ -67,9 +77,16 @@ export function Table({
   sortDirection = null,
 }) {
   const headerBg = headerBackground ?? COLORS.TABLE_HEADER_BG
+  const capClass = heightClassName ?? maxHeightClassName
 
   return (
-    <div className={cn('overflow-x-auto pt-4 sm:pt-6', className)}>
+    <div
+      className={cn(
+        'min-h-0 overflow-x-auto overflow-y-auto pt-4 sm:pt-6',
+        capClass,
+        className
+      )}
+    >
       <table className="w-full border-collapse" style={{ minWidth }}>
         <thead>
           <tr className="border-b border-gray-200" style={{ backgroundColor: headerBg }}>

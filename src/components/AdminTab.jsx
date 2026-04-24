@@ -75,25 +75,27 @@ function RoleCheckOptions({ value, onChange, options, disabled }) {
                         disabled={disabled}
                         onClick={() => onChange(role)}
                         className={cn(
-                            'flex min-w-0 items-center justify-between gap-2 rounded-lg border-2 px-3 py-3 text-left transition sm:px-4',
+                            'flex min-w-0 items-center justify-between gap-2 rounded-lg border px-3 py-3 text-left transition sm:px-4',
                             selected
-                                ? 'border-brand-teal bg-brand-teal/[0.06] shadow-sm ring-1 ring-brand-teal/20'
+                                ? 'border-brand-teal  shadow-sm ring-1 ring-brand-teal/20'
                                 : 'border-gray-200 bg-white hover:border-gray-300',
                             disabled && 'cursor-not-allowed opacity-50'
                         )}
                     >
                         <span className="text-sm font-semibold text-gray-900">{formatRoleLabel(role)}</span>
+                        {selected ? (
                         <span
                             className={cn(
-                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                                selected
-                                    ? 'border-brand-teal bg-brand-teal text-white'
-                                    : 'border-gray-300 bg-white text-transparent'
+                                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full  transition-colors',
+                                // selected
+                                //     ? 'border-brand-teal bg-brand-teal text-white'
+                                //     : 'border-gray-300 bg-white text-transparent'
                             )}
                             aria-hidden
                         >
-                            <Check className="h-4 w-4" strokeWidth={3} />
+                            <img src="/svgs/whatsapp/check.svg" alt="Check" className="h-5 w-5 object-contain" />
                         </span>
+                        ) : null}
                     </button>
                 )
             })}
@@ -341,8 +343,8 @@ export default function AdminTab() {
     return (
         <>
             <ToastContainer />
-            <div className="mx-auto p-6">
-                <div className="mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="mx-auto flex min-h-[calc(100vh-6.5rem)] flex-col p-6">
+                <div className="mb-4 shrink-0 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                     <div className="flex flex-col gap-4 sm:flex-row items-center sm:justify-between">
                         <div>
                             <h2 className="text-lg font-bold text-gray-900">Add and Manage Users</h2>
@@ -362,10 +364,11 @@ export default function AdminTab() {
                     </div>
                 </div>
 
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div className="flex shrink-0 flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <h3 className="text-lg font-bold text-gray-900">All Users</h3>
                         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                            { users.length !== 0 &&
                             <SearchInput
                                 value={searchQuery}
                                 onChange={handleSearch}
@@ -373,6 +376,7 @@ export default function AdminTab() {
                                 className="w-full md:min-w-[440px]"
                                 dashboardInput
                             />
+}
                             {isSuperUser && (
                                 <select
                                     value={tenantFilter}
@@ -394,13 +398,13 @@ export default function AdminTab() {
                     </div>
 
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-16">
+                        <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-16">
                             <div className="h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-brand-teal" />
                             <p className="mt-4 text-sm text-gray-500">Loading users…</p>
                         </div>
                     ) : users.length === 0 ? (
                         searchQuery.trim() || tenantFilter ? (
-                            <div className="py-16 text-center">
+                            <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-16 text-center">
                                 <p className="text-sm font-medium text-gray-700">No users found</p>
                                 <p className="mt-2 text-sm text-gray-500">
                                     No results match your filters. Try adjusting search or tenant.
@@ -408,15 +412,14 @@ export default function AdminTab() {
                             </div>
                         ) : (
                             <EmptyState
-                                icon={Users}
+                                icon="/admin/users"
                                 title="No users added yet"
                                 description="Once you add a user, it will appear here."
                                 spacious={false}
-                                className="min-h-[280px] py-14"
                             />
                         )
                     ) : (
-                        <div className='px-5 py-4' >
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-4">
                             <Table
                                 columns={[
                                     {
@@ -514,14 +517,14 @@ export default function AdminTab() {
                                 onSortClick={onUserSort}
                                 sortColumnId={userSort.column}
                                 sortDirection={userSort.dir}
-                                className="pt-0 sm:pt-0 [&>div]:pt-0"
+                                className="!pt-0 sm:!pt-0"
                                 minWidth="880px"
                             />
                             <Pagination
                                 currentPage={page}
                                 totalPages={totalPages}
                                 onPageChange={setPage}
-                                className="border-t border-gray-100 pb-4"
+                                className="shrink-0 border-t border-gray-100 pb-4"
                             />
                         </div>
                     )}
@@ -579,7 +582,7 @@ export default function AdminTab() {
                                     <span
                                         className={cn(
                                             'inline-block h-2 w-2 shrink-0 rounded-full',
-                                            editStatusActive ? 'bg-emerald-500' : 'bg-gray-400'
+                                            // editStatusActive ? 'bg-emerald-500' : 'bg-gray-400'
                                         )}
                                         aria-hidden
                                     />

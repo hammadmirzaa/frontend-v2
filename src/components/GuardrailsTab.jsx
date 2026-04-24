@@ -458,8 +458,8 @@ export default function GuardrailsTab() {
         </div>
       </Modal>
 
-      <div className="h-full rounded-lg shadow-lg">
-        <div className="border-b p-6">
+      <div className="flex h-full flex-col rounded-lg shadow-lg p-6 gap-6">
+        <div className="border-b pb-5">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Guardrails & Rules</h2>
@@ -471,9 +471,11 @@ export default function GuardrailsTab() {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="flex min-h-0 flex-1 flex-col">
           {loading ? (
-            <div className="py-12 text-center text-gray-500">Loading guardrails...</div>
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-12 text-center text-gray-500">
+              Loading guardrails...
+            </div>
           ) : guardrails.length ===0 ? (
             <EmptyState
               icon="guardrails"
@@ -600,7 +602,7 @@ export default function GuardrailsTab() {
               {filteredGuardrails.length === 0 ? (
                 <div className="py-10 text-center text-sm text-gray-500">No guardrails match your search or filters.</div>
               ) : (
-                <div className="overflow-hidden rounded-xl border border-gray-200">
+                <div className="flex min-h-0 flex-col overflow-hidden rounded-xl">
                   <Table
                     columns={columns}
                     data={paginatedGuardrails}
@@ -609,13 +611,13 @@ export default function GuardrailsTab() {
                     onSortClick={onSortClick}
                     sortColumnId={tableSort.column}
                     sortDirection={tableSort.dir}
-                    className="pt-0 sm:pt-0 [&>div]:pt-0"
+                    className="!pt-0 sm:!pt-0"
                   />
                   <Pagination
                     currentPage={page}
                     totalPages={totalPages}
                     onPageChange={setPage}
-                    className="border-t border-gray-100 px-4 pb-4 sm:px-6"
+                    className="shrink-0 border-t border-gray-100 px-4 pb-4 sm:px-6"
                   />
                 </div>
               )}

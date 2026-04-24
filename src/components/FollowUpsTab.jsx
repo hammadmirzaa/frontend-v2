@@ -13,20 +13,18 @@ import {
   Trash2,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   X,
   MoreHorizontal,
-  CalendarDays,
   SendHorizontal,
   ClipboardList,
+  MoreVertical,
 } from 'lucide-react'
 import axios from 'axios'
 import { useToast } from '../hooks/useToast'
 import config from '../config'
 import FollowUpModal from './FollowUpModal'
 import { COLORS } from '../lib/designTokens'
-import { SelectDropdown } from './ui'
+import { SelectDropdown, DateRangeFilterField, Pagination } from './ui'
 
 const API_URL = config.API_URL
 
@@ -100,53 +98,6 @@ const parseApiUtcDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-const formatDateForInput = (value) => {
-  if (!value) return ''
-  const date = value instanceof Date ? value : new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const formatDateDisplay = (value) => {
-  if (!value) return 'mm/dd/yyyy'
-  const date = new Date(`${value}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return 'mm/dd/yyyy'
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-const buildCalendarDays = (monthDate) => {
-  const year = monthDate.getFullYear()
-  const month = monthDate.getMonth()
-  const firstDay = new Date(year, month, 1)
-  const firstWeekday = firstDay.getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const daysInPrevMonth = new Date(year, month, 0).getDate()
-
-  const items = []
-  for (let i = firstWeekday - 1; i >= 0; i -= 1) {
-    const day = daysInPrevMonth - i
-    const date = new Date(year, month - 1, day)
-    items.push({ date, day, inCurrentMonth: false })
-  }
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = new Date(year, month, day)
-    items.push({ date, day, inCurrentMonth: true })
-  }
-  while (items.length % 7 !== 0 || items.length < 42) {
-    const index = items.length - (firstWeekday + daysInMonth) + 1
-    const date = new Date(year, month + 1, index)
-    items.push({ date, day: index, inCurrentMonth: false })
-  }
-  return items
-}
-
 export default function FollowUpsTab() {
   const [followups, setFollowups] = useState([])
   const [leads, setLeads] = useState([])
@@ -166,13 +117,7 @@ export default function FollowUpsTab() {
   const filterDropdownRef = useRef(null)
   const filterTriggerRef = useRef(null)
   const filterPanelRef = useRef(null)
-  const datePopoverRef = useRef(null)
-  const fromDateButtonRef = useRef(null)
-  const toDateButtonRef = useRef(null)
   const [filterPanelPosition, setFilterPanelPosition] = useState({ top: 0, left: 0, width: 352, placement: 'bottom' })
-  const [activeDateField, setActiveDateField] = useState(null)
-  const [datePopoverPos, setDatePopoverPos] = useState({ top: 0, left: 0 })
-  const [calendarMonth, setCalendarMonth] = useState(new Date())
   const [selectedFollowUp, setSelectedFollowUp] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [stats, setStats] = useState(null)
@@ -182,7 +127,6 @@ export default function FollowUpsTab() {
   const [lane, setLane] = useState('due_now')
   const [currentPage, setCurrentPage] = useState(1)
   const [actionMenuOpenId, setActionMenuOpenId] = useState(null)
-  const calendarDays = useMemo(() => buildCalendarDays(calendarMonth), [calendarMonth])
 
   const { showToast, ToastContainer } = useToast()
 
@@ -200,16 +144,14 @@ export default function FollowUpsTab() {
     const onPointerDown = (event) => {
       const clickedFilterTrigger = filterDropdownRef.current?.contains(event.target)
       const clickedFilterPanel = filterPanelRef.current?.contains(event.target)
-      const clickedDatePopover = datePopoverRef.current?.contains(event.target)
-      if (!clickedFilterTrigger && !clickedFilterPanel && !clickedDatePopover) {
+      const clickedDateRangePicker = event.target.closest('[data-date-range-filter-ui]')
+      if (!clickedFilterTrigger && !clickedFilterPanel && !clickedDateRangePicker) {
         setFilterModalOpen(false)
-        setActiveDateField(null)
       }
     }
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         setFilterModalOpen(false)
-        setActiveDateField(null)
       }
     }
     document.addEventListener('mousedown', onPointerDown)
@@ -247,51 +189,6 @@ export default function FollowUpsTab() {
       window.removeEventListener('scroll', onReposition, true)
     }
   }, [filterModalOpen])
-
-  const updateDatePopoverPosition = (field) => {
-    const anchorRef = field === 'from' ? fromDateButtonRef : toDateButtonRef
-    if (!anchorRef?.current) return
-    const rect = anchorRef.current.getBoundingClientRect()
-    const popoverWidth = 270
-    const popoverHeight = datePopoverRef.current?.offsetHeight || 320
-    const spaceBelow = window.innerHeight - rect.bottom - 8
-    const spaceAbove = rect.top - 8
-    const openUp = spaceBelow < popoverHeight && spaceAbove > spaceBelow
-    const top = openUp ? Math.max(8, rect.top - popoverHeight - 8) : rect.bottom + 8
-    const left = Math.min(window.innerWidth - popoverWidth - 8, Math.max(8, rect.left))
-    setDatePopoverPos({ top, left })
-  }
-
-  useEffect(() => {
-    if (!activeDateField) return undefined
-    const rafId = window.requestAnimationFrame(() => updateDatePopoverPosition(activeDateField))
-    const onReposition = () => updateDatePopoverPosition(activeDateField)
-    window.addEventListener('resize', onReposition)
-    window.addEventListener('scroll', onReposition, true)
-    return () => {
-      window.cancelAnimationFrame(rafId)
-      window.removeEventListener('resize', onReposition)
-      window.removeEventListener('scroll', onReposition, true)
-    }
-  }, [activeDateField])
-
-  const openDatePicker = (field) => {
-    const currentValue = field === 'from' ? draftFromDate : draftToDate
-    if (currentValue) {
-      const parsed = new Date(`${currentValue}T00:00:00`)
-      if (!Number.isNaN(parsed.getTime())) setCalendarMonth(parsed)
-    } else {
-      setCalendarMonth(new Date())
-    }
-    setActiveDateField((prev) => (prev === field ? null : field))
-  }
-
-  const handleDateSelect = (date) => {
-    const nextValue = formatDateForInput(date)
-    if (activeDateField === 'from') setDraftFromDate(nextValue)
-    if (activeDateField === 'to') setDraftToDate(nextValue)
-    setActiveDateField(null)
-  }
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -601,12 +498,11 @@ export default function FollowUpsTab() {
                 setDraftChatbotFilter(chatbotFilter)
                 setDraftFromDate(fromDate)
                 setDraftToDate(toDate)
-                setActiveDateField(null)
                 setFilterModalOpen((prev) => !prev)
               }}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
             >
-              <Filter className="h-4 w-4" />
+              <img src="/svgs/followups/filter.svg" alt="Filters" className="h-4 w-4" />
               Filters
               <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${filterModalOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -622,7 +518,7 @@ export default function FollowUpsTab() {
                     width: `${filterPanelPosition.width}px`,
                   }}
                 >
-                  <h3 className="mb-3 text-xl font-bold" style={{ color: COLORS.BRAND }}>
+                  <h3 className="mb-3 text-base font-semibold" style={{ color: COLORS.BRAND }}>
                     Filter Options
                   </h3>
                   <div className="space-y-3">
@@ -644,29 +540,16 @@ export default function FollowUpsTab() {
                       onChange={setDraftTypeFilter}
                       options={TYPE_FILTER_OPTIONS.map((option) => ({ value: option.value, label: option.label.replace(' only', '') }))}
                     />
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-gray-900">Date Range</label>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <button
-                          ref={fromDateButtonRef}
-                          type="button"
-                          onClick={() => openDatePicker('from')}
-                          className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 px-3 text-left text-sm text-gray-900 focus:border-brand-teal/40 focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
-                        >
-                          <span className={draftFromDate ? 'text-gray-900' : 'text-gray-400'}>{formatDateDisplay(draftFromDate)}</span>
-                          <CalendarDays className="h-4 w-4 text-gray-500" />
-                        </button>
-                        <button
-                          ref={toDateButtonRef}
-                          type="button"
-                          onClick={() => openDatePicker('to')}
-                          className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-200 px-3 text-left text-sm text-gray-900 focus:border-brand-teal/40 focus:outline-none focus:ring-2 focus:ring-brand-teal/20"
-                        >
-                          <span className={draftToDate ? 'text-gray-900' : 'text-gray-400'}>{formatDateDisplay(draftToDate)}</span>
-                          <CalendarDays className="h-4 w-4 text-gray-500" />
-                        </button>
-                      </div>
-                    </div>
+                    <DateRangeFilterField
+                      label="Date Range"
+                      placeholder="Select date range"
+                      dateFrom={draftFromDate}
+                      dateTo={draftToDate}
+                      onChange={(from, to) => {
+                        setDraftFromDate(from)
+                        setDraftToDate(to)
+                      }}
+                    />
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <button
@@ -682,7 +565,6 @@ export default function FollowUpsTab() {
                         setChatbotFilter('all')
                         setFromDate('')
                         setToDate('')
-                        setActiveDateField(null)
                         setFilterModalOpen(false)
                       }}
                       className="rounded-lg border border-brand-teal px-4 py-2 text-sm font-semibold text-brand-teal hover:bg-brand-teal/5"
@@ -697,7 +579,6 @@ export default function FollowUpsTab() {
                         setChatbotFilter(draftChatbotFilter)
                         setFromDate(draftFromDate)
                         setToDate(draftToDate)
-                        setActiveDateField(null)
                         setFilterModalOpen(false)
                       }}
                       className="rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white hover:bg-brand-teal-hover"
@@ -720,7 +601,6 @@ export default function FollowUpsTab() {
             className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
             style={{ backgroundColor: COLORS.BRAND }}
           >
-            <Plus className="h-4 w-4" />
             Schedule Follow Up
           </button>
         </div>
@@ -731,14 +611,14 @@ export default function FollowUpsTab() {
               key={item.id}
               type="button"
               onClick={() => setLane(item.id)}
-              className="inline-flex items-center w-full text-center justify-center gap-2 border-b-2 pb-1.5 text-sm font-semibold"
+              className="inline-flex items-center w-full text-center justify-center gap-2 border-b-2 pb-1.5 text-xs font-medium"
               style={{
-                color: lane === item.id ? COLORS.BRAND : COLORS.GRAY_500,
+                color: lane === item.id ? COLORS.BRAND : '#6b7280',
                 borderBottomColor: lane === item.id ? COLORS.BRAND : 'transparent',
               }}
             >
               <span>  {item.label}</span>
-              <span className={`rounded-md px-1.5 py-0.5 text-sm ${item.color}`}> • {laneCounts[item.id]}</span>
+              <span className={`rounded-md px-1.5 py-0.5 text-sm font-semibold ${item.color}`}> • {laneCounts[item.id]}</span>
             </button>
           ))}
         </div>
@@ -769,9 +649,14 @@ export default function FollowUpsTab() {
                 </div>
 
                 <div className="mb-4 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-                  <span className="inline-flex items-center gap-1.5">{getTypeIcon(followup.followup_type)}<span className="capitalize">{followup.followup_type}</span></span>
-                  <span className="inline-flex items-center gap-1.5"><MessageSquare className="h-4 w-4 text-gray-400" />Chatbot Name</span>
-                  <span className="inline-flex items-center gap-1.5"><Clock className="h-4 w-4 text-gray-400" />{formatScheduleLabel(followup.scheduled_at)}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <img src= "/svgs/followups/mail.svg" alt="Email" className="h-4 w-4" />
+                    Email
+                  </span>
+                  <span className="text-gray-300">•</span>
+                  <span className="inline-flex items-center gap-1.5"> <img src= "/svgs/followups/chatbot.svg" alt="Chatbot" className="h-4 w-4" /> Chatbot Name</span>
+                  <span className="text-gray-300">•</span>
+                  <span className="inline-flex items-center gap-1.5"><img src= "/svgs/followups/clock.svg" alt="Calendar" className="h-4 w-4" />{formatScheduleLabel(followup.scheduled_at)}</span>
                 </div>
 
                 <div className="flex items-center gap-2 ">
@@ -784,7 +669,7 @@ export default function FollowUpsTab() {
                     className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold text-white"
                     style={{ backgroundColor: COLORS.BRAND }}
                   >
-                    <SendHorizontal className="h-3.5 w-3.5" />
+                    <img src= "/svgs/followups/send.svg" alt="Send" className="h-3.5 w-3.5" />
                     Send Now
                   </button>
                   <button
@@ -793,9 +678,10 @@ export default function FollowUpsTab() {
                       setSelectedFollowUp(followup)
                       setIsModalOpen(true)
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                    className="inline-flex items-center gap-1.5 rounded-md  px-3 py-1.5 text-xs font-normal text-gray-900 hover:bg-gray-50"
+                    style={{ backgroundColor: COLORS.PLAYGROUND_CHAT_HIGHLIGHT_BG }}
                   >
-                    <CalendarDays className="h-3.5 w-3.5 text-brand-teal" />
+                    <img src= "/svgs/followups/reschedule.svg" alt="Reschedule" className="h-3.5 w-3.5" />
                     Reschedule
                   </button>
                   <div className="relative" data-followup-action-menu-root="true">
@@ -805,7 +691,7 @@ export default function FollowUpsTab() {
                       className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100"
                       title="Actions"
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreVertical className="h-4 w-4" />
                     </button>
 
                     {actionMenuOpenId === followup.id ? (
@@ -842,94 +728,13 @@ export default function FollowUpsTab() {
           </div>
         )}
 
-        <div className="mt-5 flex items-center justify-between pt-4">
-          <p className="text-xs text-gray-500">Page {safePage} of {totalPages}</p>
-          <div className="flex items-center gap-2">
-            {Array.from({ length: Math.min(6, totalPages) }, (_, idx) => idx + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() => setCurrentPage(page)}
-                className="h-7 min-w-7 rounded-md px-2 text-xs font-semibold"
-                style={{
-                  backgroundColor: safePage === page ? COLORS.BRAND_ACTIVE_BG : 'transparent',
-                  color: safePage === page ? COLORS.BRAND : COLORS.GRAY_600,
-                }}
-              >
-                {String(page).padStart(2, '0')}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              className="rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ backgroundColor: COLORS.BRAND }}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          className="mt-5 pt-4 !px-0"
+        />
       </div>
-
-      {activeDateField
-        ? createPortal(
-            <div
-              ref={datePopoverRef}
-              className="fixed z-[140] w-[270px] rounded-xl border border-gray-200 bg-white p-2.5 shadow-xl"
-              style={{ top: `${datePopoverPos.top}px`, left: `${datePopoverPos.left}px` }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <button
-                  type="button"
-                  className="rounded p-1 text-gray-600 hover:bg-gray-100"
-                  onClick={() => setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-                >
-                  <ChevronLeft size={15} />
-                </button>
-                <p className="text-xs font-semibold text-gray-800">
-                  {calendarMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                </p>
-                <button
-                  type="button"
-                  className="rounded p-1 text-gray-600 hover:bg-gray-100"
-                  onClick={() => setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-                >
-                  <ChevronRight size={15} />
-                </button>
-              </div>
-              <div className="mb-1 grid grid-cols-7 text-center text-[11px] text-gray-500">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                  <span key={day} className="py-1">{day}</span>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-y-1">
-                {calendarDays.map((entry) => {
-                  const dateKey = formatDateForInput(entry.date)
-                  const selectedDate = activeDateField === 'from' ? draftFromDate : draftToDate
-                  const isSelected = dateKey === selectedDate
-                  return (
-                    <button
-                      key={`${dateKey}-${entry.day}`}
-                      type="button"
-                      onClick={() => handleDateSelect(entry.date)}
-                      className={`mx-auto h-7 w-7 rounded-full text-[11px] ${
-                        isSelected
-                          ? 'bg-brand-teal text-white'
-                          : entry.inCurrentMonth
-                            ? 'text-gray-800 hover:bg-gray-100'
-                            : 'text-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {entry.day}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
 
       {/* Scheduler Status - Disabled (using FastAPI scheduler) */}
       {/* {schedulerStatus && (

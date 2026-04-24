@@ -4,6 +4,7 @@ import Modal from '../Modal'
 import { SearchInput } from './SearchInput'
 import { Button } from './Button'
 import { SelectDropdown } from './SelectDropdown'
+import { COLORS } from '../../lib/designTokens'
 import { formatDateDMY } from '../../utils/formatDateDMY'
 import { cn } from '../../utils/cn'
 
@@ -133,11 +134,19 @@ export function SelectChatbotModal({
                   onClick={() => setPendingId(bot.id)}
                   className={cn(
                     'relative flex gap-3 rounded-xl border p-3 text-left transition-colors',
-                    selected ? 'border-brand-teal bg-white shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
+                    selected ? 'shadow-sm' : 'border-gray-200 bg-white hover:border-gray-300'
                   )}
+                  style={
+                    selected
+                      ? {
+                          borderColor: COLORS.BRAND,
+                          backgroundColor: COLORS.PLAYGROUND_CHAT_HIGHLIGHT_BG,
+                        }
+                      : undefined
+                  }
                 >
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10">
-                    <Bot className="h-6 w-6 text-brand-teal" strokeWidth={2} aria-hidden />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg">
+                    <img src="/svgs/playground/chatbott.svg" alt="Chatbot" className="h-10 w-10 object-contain" />
                   </div>
                   <div className="min-w-0 flex-1 pt-0.5">
                     <p className="truncate text-sm font-bold text-gray-900">{bot.name}</p>

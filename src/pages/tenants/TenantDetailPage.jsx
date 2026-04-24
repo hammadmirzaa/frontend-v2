@@ -759,7 +759,7 @@ export default function TenantDetailPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="relative overflow-x-auto">
+                    <div className="relative max-h-[calc(100vh-26rem)] overflow-auto">
                       <table className="w-full min-w-[720px] text-sm">
                         <thead>
                           <tr className="border-b border-slate-100 bg-slate-50/50 text-left">
@@ -967,9 +967,8 @@ export default function TenantDetailPage() {
                       </li>
                     ))}
                   </ul>
-                  <div className="hidden max-h-[min(480px,70vh)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm md:block">
-                    <div className="overflow-y-auto overflow-x-auto">
-                      <table className="w-full min-w-[520px] text-sm">
+                  <div className="hidden max-h-[calc(100vh-26rem)] overflow-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm md:block">
+                    <table className="w-full min-w-[520px] text-sm">
                         <thead className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50/95 backdrop-blur-sm">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -995,7 +994,6 @@ export default function TenantDetailPage() {
                           ))}
                         </tbody>
                       </table>
-                    </div>
                   </div>
                 </>
               )}

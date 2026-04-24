@@ -15,6 +15,7 @@ import config from '../config'
 import Modal from './Modal'
 import Spinner from './Spinner'
 import EmptyState from './EmptyState'
+import ManualKnowledgeEntryView from './ManualKnowledgeEntryView'
 import { SearchInput, Table, Pagination, Button, SelectDropdown, DateRangeFilterField } from './ui'
 import { formatDateDMY } from '../utils/formatDateDMY'
 import { formatApiErrorDetail } from '../utils/formatApiError'
@@ -118,6 +119,9 @@ export default function LibrariesTab() {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef(null)
+
+  const [manualEditorOpen, setManualEditorOpen] = useState(false)
+  const [manualChatbotId, setManualChatbotId] = useState('')
 
   const [limitModalOpen, setLimitModalOpen] = useState(false)
   const [limitMessage, setLimitMessage] = useState(
@@ -326,10 +330,19 @@ export default function LibrariesTab() {
   }
 
   const openAddModal = () => {
+    setManualEditorOpen(false)
+    setManualChatbotId('')
     setAddStep('pick')
     setAddChatbotId('')
     setInputMode('upload')
     setAddModalOpen(true)
+  }
+
+  const closeManualEditor = () => {
+    setManualEditorOpen(false)
+    setManualChatbotId('')
+    setInputMode('upload')
+    setAddStep('pick')
   }
 
   const closeAddModal = () => {
@@ -338,6 +351,7 @@ export default function LibrariesTab() {
     setAddStep('pick')
     setAddChatbotId('')
     setDragOver(false)
+    setInputMode('upload')
   }
 
   const goNextFromPick = () => {
@@ -345,8 +359,10 @@ export default function LibrariesTab() {
       showToast('Please select a chatbot', 'error')
       return
     }
-    if (inputMode !== 'upload') {
-      showToast('Manual entry is coming soon — choose Upload a Document for now.', 'error')
+    if (inputMode === 'manual') {
+      setManualChatbotId(addChatbotId)
+      setAddModalOpen(false)
+      setManualEditorOpen(true)
       return
     }
     setAddStep('upload')
@@ -569,26 +585,28 @@ export default function LibrariesTab() {
                 <button
                   type="button"
                   onClick={() => setInputMode('manual')}
-                  disabled
-                  title="Coming soon"
+                  disabled={chatbots.length === 0}
+                  title={chatbots.length === 0 ? 'Create a chatbot first' : undefined}
                   className={cn(
-                    'flex flex-col items-start rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-left opacity-60',
-                    'cursor-not-allowed'
+                    'flex flex-col items-start rounded-xl border bg-white p-4 text-left transition-colors',
+                    inputMode === 'manual'
+                      ? 'border-brand-teal shadow-sm ring-1 ring-brand-teal/15'
+                      : 'border-gray-200 hover:border-gray-300',
+                    chatbots.length === 0 && 'cursor-not-allowed opacity-50'
                   )}
                 >
                   <img src="/svgs/knowledgebase/write-manually.svg" alt="Write manually" className="w-12 h-12" />
-                  <span className="mt-3 text-sm font-semibold text-gray-700">Write manually</span>
+                  <span className="mt-3 text-sm font-semibold text-gray-900">Write manually</span>
                   <span className="mt-1 text-xs leading-relaxed text-gray-500">
                     Manually write your own specific knowledge.
-                  </span>
-                  <span className="mt-2 text-[11px] font-medium uppercase tracking-wide text-gray-400">
-                    Coming soon
                   </span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setInputMode('upload')}
+                  onClick={() => {
+                    setInputMode('upload')
+                  }}
                   className={cn(
                     'flex flex-col items-start rounded-xl border bg-white p-4 text-left transition-colors',
                     inputMode === 'upload'
@@ -683,9 +701,28 @@ export default function LibrariesTab() {
         </div>
       </Modal>
 
-      <div className="flex h-auto max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden p-4 sm:p-6">
+      {manualEditorOpen && manualChatbotId ? (
+        <ManualKnowledgeEntryView
+          chatbotId={manualChatbotId}
+          chatbotName={getChatbotName(manualChatbotId)}
+          showToast={showToast}
+          onClose={closeManualEditor}
+          onSaved={async () => {
+            await fetchDocuments()
+            showToast('Manual knowledge saved and is being processed.', 'success')
+            setSearchQuery('')
+            setCurrentPage(1)
+          }}
+          onLimitReached={(msg) => {
+            setLimitMessage(msg || limitMessage)
+            setLimitModalOpen(true)
+          }}
+          limitMessage={limitMessage}
+        />
+      ) : (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-6 gap-6">
         {/* Page header */}
-        <div className="mb-4 flex shrink-0 flex-col gap-4 border-b border-gray-200/80 pb-6 sm:flex-row items-center sm:justify-between">
+        <div className="flex shrink-0 flex-col gap-4 border-b border-gray-200/80 pb-5 sm:flex-row items-center sm:justify-between">
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">Knowledge Base</h1>
             <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-gray-500">
@@ -715,7 +752,7 @@ export default function LibrariesTab() {
           </button>
         </div> */}
 
-        <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ${documents.length === 0 ? " ": "border border-gray-100 bg-white shadow-sm"}`}>
+        <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ${documents.length === 0 ? " ": "bg-white "}`}>
           {loading ? (
             <div className="flex flex-1 items-center justify-center py-24">
               <Spinner size="lg" />
@@ -734,7 +771,7 @@ export default function LibrariesTab() {
             </EmptyState>
           ) : (
             <>
-              <div className="shrink-0 border-b border-gray-100 px-4 py-4 sm:px-6 sm:py-5">
+              <div className="shrink-0 px-4 py-4 sm:px-6 sm:py-5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <h2 className="text-lg font-bold text-gray-900">All Documents</h2>
                   <div className="flex flex-wrap items-center gap-3">
@@ -870,7 +907,7 @@ export default function LibrariesTab() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4 sm:px-4">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-4 sm:px-4">
                 {sortedDocuments.length === 0 ? (
                   <div className="py-16 text-center text-sm text-gray-500">
                     No documents match your search or filters.
@@ -891,7 +928,7 @@ export default function LibrariesTab() {
                       currentPage={currentPage}
                       totalPages={totalPages}
                       onPageChange={setCurrentPage}
-                      className="border-t border-gray-100"
+                      className="shrink-0 border-t border-gray-100"
                     />
                   </>
                 )}
@@ -900,6 +937,7 @@ export default function LibrariesTab() {
           )}
         </div>
       </div>
+      )}
     </>
   )
 }

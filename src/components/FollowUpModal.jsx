@@ -746,18 +746,18 @@ export default function FollowUpModal({
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="followup-modal-title"
-      >
-        <button
-          type="button"
-          className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] transition-opacity duration-200"
-          aria-label="Close dialog"
-          onClick={onClose}
-        />
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="followup-modal-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] transition-opacity duration-200"
+        aria-label="Close dialog"
+        onClick={onClose}
+      />
         <div
           className={`relative z-10 flex max-h-[min(92vh,560px)] w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-slide-in max-w-[600px] mx-auto } `}
         >
@@ -765,10 +765,10 @@ export default function FollowUpModal({
             <div>
               <h2
                 id="followup-modal-title"
-                className={`${isFollowupsUi ? "text-lg" : "text-lg"} leading-tight font-bold text-gray-900`}
+                className={`text-base leading-tight font-semibold text-gray-900`}
               >
                 {modalTitle}
-              </h2>
+            </h2>
               {modalSubtitle ? (
                 <p className="mt-1 text-xs text-gray-500">{modalSubtitle}</p>
               ) : null}
@@ -781,7 +781,7 @@ export default function FollowUpModal({
             >
               <X size={24} />
             </button>
-          </div>
+        </div>
 
           <div className="min-h-0 flex flex-1 flex-col bg-white">
             <form
@@ -791,20 +791,20 @@ export default function FollowUpModal({
               <div className="min-h-0 flex-1 overflow-y-auto p-4">
                 <div className="space-y-5">
                   {!selectedLead || isFollowupsUi ? (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
                         {isFollowupsUi ? "Lead / Contact" : "Select Lead *"}
-                      </label>
-                      {loadingLeads ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            </label>
+            {loadingLeads ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                           <span className="text-sm text-gray-500">
                             Loading leads...
                           </span>
-                        </div>
-                      ) : (
+              </div>
+            ) : (
                         <SelectDropdown
-                          value={formData.lead_id}
+                value={formData.lead_id}
                           onChange={(value) =>
                             handleInputChange("lead_id", value)
                           }
@@ -840,17 +840,17 @@ export default function FollowUpModal({
                             {
                               value: "message",
                               label: "SMS",
-                              icon: MessageSquare,
+                              iconSrc: "/svgs/followups/email.svg",
                             },
                             {
                               value: "both",
                               label: "Email + SMS",
-                              icon: MessageSquare,
+                              iconSrc: "/svgs/followups/emailnsms.svg",
                             },
                           ].map((typeOption) => {
-                            const Icon = typeOption.icon;
                             const active =
                               formData.followup_type === typeOption.value;
+                            const LucideIcon = typeOption.icon;
                             return (
                               <button
                                 key={typeOption.value}
@@ -861,20 +861,28 @@ export default function FollowUpModal({
                                     typeOption.value,
                                   )
                                 }
-                                className={`rounded-lg border px-3 py-5 text-left transition ${active ? "border-brand-teal bg-brand-teal/10" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                                className={`rounded-lg border px-2 py-5 text-left transition ${active ? "border-brand-teal bg-brand-teal/10" : "border-gray-200 bg-white hover:border-gray-300"}`}
                               >
-                                <Icon
-                                  size={16}
-                                  className="mb-1 text-gray-700"
-                                />
-                                <p className="text-sm font-semibold text-gray-900">
+                                {typeOption.iconSrc ? (
+                                  <img
+                                    src={typeOption.iconSrc}
+                                    alt=""
+                                    className="mb-1 h-5 w-5 object-contain"
+                                  />
+                                ) : (
+                                  <LucideIcon
+                                    size={18}
+                                    className="mb-1 text-gray-700"
+                                  />
+                                )}
+                                <p className="text-sm mt-2 font-semibold text-gray-900">
                                   {typeOption.label}
                                 </p>
                               </button>
                             );
                           })}
-                        </div>
-                      </div>
+                </div>
+              </div>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div className="relative" ref={datePickerRef}>
@@ -923,16 +931,16 @@ export default function FollowUpModal({
                             </span>
                           </button>
                         </div>
-                      </div>
+          </div>
 
                       {formData.followup_type === "email" ||
                       formData.followup_type === "both" ? (
                         <>
-                          <div>
+          <div>
                             <label className="mb-2 block text-sm font-medium text-gray-700">
                               Email Subject
-                            </label>
-                            <input
+            </label>
+                <input
                               type="text"
                               value={formData.email_subject}
                               onChange={(e) =>
@@ -944,12 +952,12 @@ export default function FollowUpModal({
                               className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-teal"
                               placeholder="Add subject..."
                             />
-                          </div>
+                  </div>
                           <div>
                             <div className="mb-2 flex items-center justify-between">
                               <label className="text-sm font-medium text-gray-700">
                                 Message
-                              </label>
+              </label>
                               <button
                                 type="button"
                                 onClick={generateAIContent}
@@ -1060,7 +1068,7 @@ export default function FollowUpModal({
                                   >
                                     <Smile size={18} />
                                   </button>
-                                </div>
+                  </div>
                                 {emojiPickerOpen ? (
                                   <div className="absolute bottom-11 left-0 z-20 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
                                     <EmojiPicker
@@ -1069,7 +1077,7 @@ export default function FollowUpModal({
                                       width={320}
                                       height={360}
                                     />
-                                  </div>
+                </div>
                                 ) : null}
                               </div>
                             </div>
@@ -1114,7 +1122,7 @@ export default function FollowUpModal({
                             {formData.followup_type === "both"
                               ? "SMS Message Content"
                               : "SMS Message Content"}
-                          </label>
+              </label>
                           <textarea
                             value={formData.message_content}
                             onChange={(e) =>
@@ -1158,7 +1166,7 @@ export default function FollowUpModal({
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           {isCallLayout ? "Call Subject" : "Meeting Title"}
                         </label>
-                        <input
+                <input
                           type="text"
                           value={activityTitle}
                           onChange={(e) => setActivityTitle(e.target.value)}
@@ -1167,7 +1175,7 @@ export default function FollowUpModal({
                             isCallLayout ? "e.g Follow up Call" : "e.g Demo"
                           }
                         />
-                      </div>
+                  </div>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div className="relative" ref={datePickerRef}>
@@ -1192,12 +1200,12 @@ export default function FollowUpModal({
                                 : "Select date"}
                             </span>
                           </button>
-                        </div>
+                </div>
 
                         <div className="relative" ref={timePickerRef}>
                           <label className="mb-2 block text-sm font-medium text-gray-700">
                             Time
-                          </label>
+              </label>
                           <button
                             ref={timeButtonRef}
                             type="button"
@@ -1224,14 +1232,14 @@ export default function FollowUpModal({
                           <label className="mb-2 block text-sm font-medium text-gray-700">
                             Phone Number
                           </label>
-                          <input
+                <input
                             type="text"
                             value={callPhoneNumber}
                             onChange={(e) => setCallPhoneNumber(e.target.value)}
                             className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-teal"
                             placeholder="+1 (555) 123-4567"
                           />
-                        </div>
+                    </div>
                       ) : (
                         <>
                           <div>
@@ -1247,19 +1255,19 @@ export default function FollowUpModal({
                                 { value: "in_person", label: "In Person" },
                               ]}
                             />
-                          </div>
+                  </div>
                           <div>
                             <label className="mb-2 block text-sm font-medium text-gray-700">
                               Meeting Link
-                            </label>
-                            <input
+              </label>
+                <input
                               type="text"
                               value={meetingLink}
                               onChange={(e) => setMeetingLink(e.target.value)}
                               className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-teal"
                               placeholder="Add meeting link..."
                             />
-                          </div>
+                  </div>
                         </>
                       )}
 
@@ -1280,7 +1288,7 @@ export default function FollowUpModal({
                               : "Add meeting agenda or notes..."
                           }
                         />
-                      </div>
+                </div>
 
                       {/* <label className="flex items-start gap-2 text-sm text-gray-800">
                         <input
@@ -1309,50 +1317,50 @@ export default function FollowUpModal({
                       <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           To
-                        </label>
+              </label>
                         <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-800">
                           <Mail size={13} className="text-gray-500" />
                           <span>
                             {selectedLead?.email || "Select lead to load email"}
                           </span>
-                        </div>
-                      </div>
+            </div>
+          </div>
 
-                      <div>
+              <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           Subject
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.email_subject}
+                </label>
+                <input
+                  type="text"
+                  value={formData.email_subject}
                           onChange={(e) =>
                             handleInputChange("email_subject", e.target.value)
                           }
                           className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-teal"
                           placeholder="Add subject..."
                           required
-                        />
-                      </div>
+                />
+              </div>
 
-                      <div>
+              <div>
                         <div className="mb-2 flex items-center justify-between">
                           <label className="text-sm font-medium text-gray-700">
                             Message
-                          </label>
-                          <button
-                            type="button"
-                            onClick={generateAIContent}
-                            disabled={generatingAI || !formData.lead_id}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={generateAIContent}
+                    disabled={generatingAI || !formData.lead_id}
                             className="inline-flex items-center gap-1 rounded-md border border-[#1C808B] px-2 py-1 text-xs font-medium text-[#1C808B] hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {generatingAI ? (
+                  >
+                    {generatingAI ? (
                               <Loader2 size={12} className="animate-spin" />
-                            ) : (
+                    ) : (
                               <Sparkles size={12} />
-                            )}
+                    )}
                             {generatingAI ? "Generating..." : "Generate AI Content"}
-                          </button>
-                        </div>
+                  </button>
+                </div>
                         <div className="rounded-lg border border-gray-200">
                           <div
                             ref={emailEditorRef}
@@ -1443,7 +1451,7 @@ export default function FollowUpModal({
                               >
                                 <Smile size={18} />
                               </button>
-                            </div>
+              </div>
                             {emojiPickerOpen ? (
                               <div className="absolute bottom-11 left-0 z-20 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
                                 <EmojiPicker
@@ -1452,7 +1460,7 @@ export default function FollowUpModal({
                                   width={320}
                                   height={360}
                                 />
-                              </div>
+            </div>
                             ) : null}
                           </div>
                         </div>
@@ -1495,10 +1503,10 @@ export default function FollowUpModal({
                   !isEmailLayout &&
                   !isMeetingLayout ? (
                     <>
-                      <div>
-                        <label className="mb-2 block text-sm font-semibold text-gray-800">
+            <div>
+                        <label className="mb-2 block text-sm font-normal text-gray-900">
                           Activity Type
-                        </label>
+                </label>
                         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                           {[
                             { value: "call", label: "Call", icon: Phone },
@@ -1510,29 +1518,28 @@ export default function FollowUpModal({
                             const isActive =
                               selectedActivityType === typeOption.value;
                             return (
-                              <button
+                <button
                                 key={typeOption.value}
-                                type="button"
+                  type="button"
                                 onClick={() =>
                                   handleActivityTypeChange(typeOption.value)
                                 }
-                                className={`rounded-lg border px-3 py-4 text-left transition ${
+                                className={`rounded-xl border px-4 py-6 text-left transition ${
                                   isActive
                                     ? "border-brand-teal bg-brand-teal/10"
                                     : "border-gray-200 bg-white hover:border-gray-300"
                                 }`}
                               >
                                 <Icon
-                                  size={16}
-                                  className="mb-1 text-gray-700"
+                                  className="mb-1 text-gray-700 w-4 h-4"
                                 />
-                                <p className="text-sm font-semibold text-gray-900">
+                                <p className="text-sm mt-2 font-semibold text-gray-900">
                                   {typeOption.label}
                                 </p>
-                              </button>
+                </button>
                             );
                           })}
-                        </div>
+              </div>
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
@@ -1545,12 +1552,12 @@ export default function FollowUpModal({
                           className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-teal"
                           placeholder="Enter activity title"
                         />
-                      </div>
-                      <div>
+              </div>
+            <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           Description
-                        </label>
-                        <textarea
+              </label>
+              <textarea
                           value={activityDescription}
                           onChange={(e) =>
                             setActivityDescription(e.target.value)
@@ -1559,13 +1566,13 @@ export default function FollowUpModal({
                           className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-brand-teal"
                           placeholder="Enter activity details..."
                         />
-                      </div>
+            </div>
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div className="relative" ref={datePickerRef}>
                           <label className="mb-2 block text-sm font-medium text-gray-700">
                             Date
-                          </label>
+                </label>
                           <button
                             ref={dateButtonRef}
                             type="button"
@@ -1584,12 +1591,12 @@ export default function FollowUpModal({
                                 : "Select date"}
                             </span>
                           </button>
-                        </div>
+              </div>
 
                         <div className="relative" ref={timePickerRef}>
                           <label className="mb-2 block text-sm font-medium text-gray-700">
                             Time
-                          </label>
+                </label>
                           <button
                             ref={timeButtonRef}
                             type="button"
@@ -1608,13 +1615,13 @@ export default function FollowUpModal({
                                 : "Select time"}
                             </span>
                           </button>
-                        </div>
-                      </div>
+              </div>
+            </div>
 
-                      <div>
+          <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
                           Status
-                        </label>
+            </label>
                         <SelectDropdown
                           value={activityStatus}
                           onChange={(value) => setActivityStatus(value)}
@@ -1623,20 +1630,20 @@ export default function FollowUpModal({
                             { value: "scheduled", label: "Scheduled" },
                             { value: "completed", label: "Completed" },
                           ]}
-                        />
-                      </div>
+              />
+            </div>
                     </>
                   ) : null}
 
-                  {!isFollowupsUi && (isCallLayout || isMeetingLayout) ? (
+                  {/* {!isFollowupsUi && (isCallLayout || isMeetingLayout) ? (
                     <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <div className="flex items-center space-x-1">
-                        <Globe size={12} className="text-gray-400" />
-                        <p className="text-xs text-gray-500">
+              <Globe size={12} className="text-gray-400" />
+              <p className="text-xs text-gray-500">
                           Timezone: Your local time (
                           {Intl.DateTimeFormat().resolvedOptions().timeZone})
-                        </p>
-                      </div>
+              </p>
+            </div>
                       {formData.scheduled_at ? (
                         <p className="mt-1 text-xs text-gray-600">
                           Scheduled preview:{" "}
@@ -1644,7 +1651,7 @@ export default function FollowUpModal({
                         </p>
                       ) : null}
                     </div>
-                  ) : null}
+                  ) : null} */}
                 </div>
               </div>
 
@@ -1761,8 +1768,8 @@ export default function FollowUpModal({
                   >
                     {submitLabel}
                   </Button>
-                </div>
-              )}
+              </div>
+            )}
             </form>
           </div>
         </div>
@@ -1809,7 +1816,7 @@ export default function FollowUpModal({
                 >
                   <ChevronRight size={15} />
                 </button>
-              </div>
+          </div>
               <div className="mb-1 grid grid-cols-7 text-center text-[11px] text-gray-500">
                 {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
                   <span key={day} className="py-1">
@@ -1822,9 +1829,9 @@ export default function FollowUpModal({
                   const dateKey = formatDateForInput(entry.date);
                   const isSelected = dateKey === activityDate;
                   return (
-                    <button
+            <button
                       key={`${dateKey}-${entry.day}`}
-                      type="button"
+              type="button"
                       onClick={() => handleDateSelect(entry.date)}
                       className={`mx-auto h-7 w-7 rounded-full text-[11px] ${
                         isSelected
@@ -1835,7 +1842,7 @@ export default function FollowUpModal({
                       }`}
                     >
                       {entry.day}
-                    </button>
+            </button>
                   );
                 })}
               </div>
@@ -1860,7 +1867,7 @@ export default function FollowUpModal({
                   <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-1">
                     {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(
                       (hour) => (
-                        <button
+            <button
                           key={hour}
                           type="button"
                           onClick={() => handleTimePartChange("hour", hour)}
@@ -1896,10 +1903,10 @@ export default function FollowUpModal({
                         className={`w-full rounded px-1.5 py-1 text-xs ${timeSelection.minute === minute ? "bg-brand-teal/15 text-brand-teal" : "text-gray-700 hover:bg-gray-100"}`}
                       >
                         {minute}
-                      </button>
+            </button>
                     ))}
-                  </div>
-                </div>
+          </div>
+        </div>
                 <div>
                   <p className="mb-1 text-[11px] text-gray-500">Period</p>
                   <div className="space-y-1 rounded-md border border-gray-200 p-1">
@@ -1913,12 +1920,12 @@ export default function FollowUpModal({
                         {period}
                       </button>
                     ))}
-                  </div>
-                </div>
+      </div>
+    </div>
               </div>
             </div>,
             document.body,
-          )
+  )
         : null}
     </>
   );

@@ -19,22 +19,28 @@ import {
 
 const ICON_STROKE = 1.75;
 
-/** public/svgs/playground/*.svg — some tab ids map to different filenames */
-const SIDEBAR_ICON_FILE = {
-  whatsapp: "send",
-};
-
 /**
  * Sidebar nav images are static SVGs; use filters so they read white on teal and black when idle.
+ * Default: `public/svgs/playground/{tabId}.svg`. Pass `item.icon` as a string path to override (e.g. WhatsApp).
  */
 function sidebarNavIconSrc(tabId) {
-  const file = SIDEBAR_ICON_FILE[tabId] ?? tabId;
-  return `/svgs/playground/${file}.svg`;
+  return `/svgs/playground/${tabId}.svg`;
 }
 
-/** `true` = row uses brand-teal + white foreground (invert dark art to white) */
-function sidebarNavIconClassName(onTeal) {
-  return `h-5 w-5 shrink-0 object-contain ${onTeal ? "brightness-0 invert" : ""}`;
+/** Tabs whose SVG art uses light/white strokes — invisible on white bg without a filter */
+function sidebarUsesLightStrokeArt(tabId) {
+  return tabId === "playground" || tabId === "whatsapp";
+}
+
+/**
+ * @param {boolean} onTeal — brand-teal row (Leads-style) or Playground header when section active
+ * @param {string} [tabId] — for picking idle filter (playground / whatsapp use white strokes in SVG)
+ */
+function sidebarNavIconClassName(onTeal, tabId) {
+  const base = "h-5 w-5 shrink-0 object-contain";
+  if (onTeal) return `${base} brightness-0 invert`;
+  if (tabId && sidebarUsesLightStrokeArt(tabId)) return `${base} brightness-0`;
+  return base;
 }
 
 /** Sub-items shown under Playground (tenant product area). */
@@ -81,7 +87,7 @@ export default function Sidebar({
   const isSuperUser = user?.role === "SUPER_USER" || user?.is_super_user;
   const isAdmin = user?.role === "ADMIN";
 
-  const whatsappNavItem = { id: "whatsapp", label: "WhatsApp", icon: Send };
+  const whatsappNavItem = { id: "whatsapp", label: "WhatsApp", icon: "/svgs/whatsapp/whatsapp.svg" };
 
   const pmPortalBlocked =
     (isSales || isManager) && user?.pm_sales_portal_allowed === false;
@@ -245,7 +251,7 @@ export default function Sidebar({
             <img
               src="/svgs/playground/playground.svg"
               alt=""
-              className={sidebarNavIconClassName(playgroundSectionActive)}
+              className={sidebarNavIconClassName(playgroundSectionActive, "playground")}
             />
             <span
               className={`min-w-0 flex-1 truncate ${collapsed ? "sr-only" : ""}`}
@@ -321,6 +327,10 @@ export default function Sidebar({
   const renderStandaloneRow = (item) => {
     const active = activeTab === item.id;
     const blocked = isBlocked(item.id);
+    const iconSrc =
+      typeof item.icon === "string" && item.icon.trim() !== ""
+        ? item.icon
+        : sidebarNavIconSrc(item.id);
     return (
       <button
         key={item.id}
@@ -335,9 +345,9 @@ export default function Sidebar({
         }`}
       >
         <img
-          src={sidebarNavIconSrc(item.id)}
+          src={iconSrc}
           alt=""
-          className={sidebarNavIconClassName(active)}
+          className={sidebarNavIconClassName(active, item.id)}
         />
         <span className={`truncate ${collapsed ? "sr-only" : ""}`}>
           {item.label}

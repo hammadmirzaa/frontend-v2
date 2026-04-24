@@ -109,7 +109,7 @@ export default function ConversationDetailView({
     <>
       <ImproveConversationDrawer open={improveOpen} onClose={() => setImproveOpen(false)} />
 
-      <div className="flex flex-col bg-[#F5F6F8] p-2 sm:p-4">
+      <div className="flex flex-col p-2 sm:p-4">
         <nav
           aria-label="Breadcrumb"
           className="mb-3 flex min-w-0 flex-wrap items-center gap-1.5 text-sm leading-snug sm:mb-4 sm:px-0.5"
@@ -185,7 +185,7 @@ export default function ConversationDetailView({
             </div>
           ) : null} */}
 
-          <div className="max-h-[min(560px,calc(100vh-14rem))] overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4">
+          <div className="max-h-[min(680px,calc(100vh-17rem))] overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-brand-teal" />
@@ -218,13 +218,13 @@ export default function ConversationDetailView({
                         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 bg-white shadow-sm"
                         style={{ borderColor: COLORS.BRAND }}
                       >
-                        <User size={17} strokeWidth={2} style={{ color: COLORS.BRAND }} aria-hidden />
+                        <img src="/svgs/conversations/bot.svg" alt="User" className="h-9 w-9 object-contain" />
                       </div>
                     </div>
                   ) : (
                     <div key={index} className="flex gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-teal text-white shadow-sm">
-                        <Bot size={17} strokeWidth={2} aria-hidden />
+                        <img src="/svgs/conversations/user.svg" alt="User" className="h-9 w-9 object-contain" />  
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="inline-block max-w-full rounded-xl rounded-tl-sm bg-gray-100 px-3 py-2.5 text-gray-900 shadow-sm">

@@ -5,6 +5,7 @@ import config from '../config'
 import { cn } from '../utils/cn'
 import { Button, SelectDropdown } from './ui'
 import Modal from './Modal'
+import Spinner from './Spinner'
 import {
   Save,
   RefreshCcw,
@@ -84,7 +85,15 @@ function SettingsCard({ title, description, headerRight, children }) {
   )
 }
 
-function CheckmarkRadioRow({ label, hint, selected, onSelect, accent = 'indigo', softSurface = false }) {
+function CheckmarkRadioRow({
+  label,
+  hint,
+  selected,
+  onSelect,
+  accent = 'indigo',
+  softSurface = false,
+  selectedMark = null,
+}) {
   const brand = accent === 'brand'
   return (
     <button
@@ -97,12 +106,12 @@ function CheckmarkRadioRow({ label, hint, selected, onSelect, accent = 'indigo',
         softSurface
           ? selected
             ? brand
-              ? 'border-0 bg-brand-teal/[0.08] shadow-sm'
+              ? 'border border-brand-teal  shadow-sm ring-1 ring-brand-teal/15'
               : 'border-0 bg-indigo-50 shadow-sm'
-            : 'border-0 bg-gray-50 hover:bg-gray-100/85'
+            : 'border bg-gray-50 hover:bg-gray-100/85'
           : selected
             ? brand
-              ? 'border border-brand-teal bg-brand-teal/[0.06] shadow-sm ring-1 ring-brand-teal/15'
+              ? 'border border-brand-teal  shadow-sm ring-1 ring-brand-teal/15'
               : 'border border-indigo-500 bg-indigo-50/90 shadow-sm ring-1 ring-indigo-500/15'
             : 'border border-gray-200 bg-gray-50/80 hover:border-gray-300'
       )}
@@ -113,16 +122,24 @@ function CheckmarkRadioRow({ label, hint, selected, onSelect, accent = 'indigo',
       </span>
       <span
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center self-end rounded-lg border-2 transition-colors sm:self-auto',
-          selected
-            ? brand
-              ? 'border-brand-teal bg-brand-teal text-white'
-              : 'border-indigo-600 bg-indigo-600 text-white'
-            : 'border-gray-300 bg-white text-transparent'
+          'flex h-8 w-8 shrink-0 items-center justify-center self-end rounded-lg transition-colors sm:self-auto',
+          // selected
+          //   ? brand
+          //     ? 'border-brand-teal bg-brand-teal text-white'
+          //     : 'border-indigo-600 bg-indigo-600 text-white'
+          //   : 'border-gray-300 bg-white text-transparent'
         )}
         aria-hidden
       >
-        <Check className="h-4 w-4" strokeWidth={3} />
+        {selected ? (
+          selectedMark != null ? (
+            <span className="flex h-full w-full items-center justify-center">
+              {selectedMark}
+            </span>
+          ) : (
+            <img src="/svgs/whatsapp/check.svg" alt="Check" className="h-4 w-4 object-contain" />
+          )
+        ) : null}
       </span>
     </button>
   )
@@ -625,6 +642,13 @@ export default function WhatsAppTab() {
                     selected={selected}
                     accent="brand"
                     softSurface
+                    selectedMark={
+                      <img
+                        src={value ? '/svgs/whatsapp/check.svg' : '/svgs/whatsapp/off.svg'}
+                        alt=""
+                        className="shrink-0"
+                      />
+                    }
                     onSelect={() => setIvr((prev) => ({ ...prev, active: value }))}
                   />
                 )
@@ -704,7 +728,7 @@ export default function WhatsAppTab() {
                               </span>
                               <span
                                 className={cn(
-                                  'shrink-0 rounded-md px-2 py-0.5 text-xs font-normal',
+                                  'shrink-0 rounded-sm px-2 py-0.5 text-xs font-normal',
                                   optionTypeChip(opt.type)
                                 )}
                               >
@@ -884,40 +908,47 @@ export default function WhatsAppTab() {
         </div>
       </Modal>
 
-      {/* Disclaimer Modal */}
-      {showDisclaimer && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-start gap-3">
-              <ShieldAlert className="mt-1 text-amber-600" size={22} />
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Meta/Twilio WhatsApp Disclaimer</h3>
-                <p className="mt-1 text-sm text-gray-700">
-                  You will be redirected to complete WhatsApp onboarding with the provider. Approval is determined by Meta
-                  and may be rejected. Without approval, WhatsApp services in Meichat will not be available.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowDisclaimer(false)}
-                className="rounded-lg bg-gray-100 px-3 py-2 text-gray-800 transition-colors hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={acceptDisclaimer}
-                disabled={accepting}
-                className="rounded-lg bg-emerald-600 px-3 py-2 text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-              >
-                {accepting ? 'Accepting...' : 'I Understand & Accept'}
-              </button>
-            </div>
+      <Modal
+        isOpen={showDisclaimer}
+        onClose={() => {
+          if (accepting) return
+          setShowDisclaimer(false)
+        }}
+        title="Meta/Twilio WhatsApp Disclaimer"
+        showCloseButton={!accepting}
+        panelClassName="max-w-[min(92vw,480px)] rounded-xl border border-gray-200/80 shadow-2xl ring-1 ring-black/5"
+      >
+        <div className="-mt-1">
+          <div className="flex gap-3">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" strokeWidth={2} aria-hidden />
+            <p className="text-xs leading-relaxed text-gray-600 sm:text-[13px]">
+              You will be redirected to complete WhatsApp onboarding with the provider. Approval is determined by Meta
+              and may be rejected. Without approval, WhatsApp services in MeiChat will not be available.
+            </p>
+          </div>
+          <div className="-mx-4 mt-5 flex justify-end gap-3 border-t border-gray-100 px-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowDisclaimer(false)}
+              disabled={accepting}
+              className="px-5"
+            >
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={acceptDisclaimer} disabled={accepting} className="px-5">
+              {accepting ? (
+                <>
+                  <Spinner size="sm" className="text-white" />
+                  Accepting…
+                </>
+              ) : (
+                'I Understand & Accept'
+              )}
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   )
 }

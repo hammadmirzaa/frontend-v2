@@ -148,7 +148,7 @@ export function SelectDropdown({
 
   return (
     <div ref={rootRef} className={cn('space-y-2', className)}>
-      {label ? <label className="block text-sm font-semibold text-gray-900">{label}</label> : null}
+      {label ? <label className="block text-sm font-normal text-gray-900">{label}</label> : null}
       <div className="relative">
         <button
           ref={buttonRef}

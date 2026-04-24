@@ -736,7 +736,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
   );
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden bg-[#F5F6F8] p-2 sm:p-4">
+    <div className="flex h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden p-2 sm:p-4">
       <ToastContainer />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden lg:flex-row lg:gap-4">
@@ -752,13 +752,13 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
                   Recent conversations for this bot.
                 </p>
               </div>
-              <button
+              {/* <button
                 type="button"
                 onClick={handleNewChatSession}
                 className="shrink-0 text-xs font-semibold text-brand-teal hover:underline"
               >
                 New chat
-              </button>
+              </button> */}
             </div>
           </div>
           <div className="my-3 px-4">

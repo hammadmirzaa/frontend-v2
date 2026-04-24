@@ -22,7 +22,7 @@ const Modal = ({ isOpen, onClose, title, subtitle, children, showCloseButton = t
         {/* Header */}
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-100 p-5">
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold text-gray-900 sm:text-xl">{title}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 sm:text-xl">{title}</h3>
             {subtitle ? <p className="mt-1 text-sm text-gray-500">{subtitle}</p> : null}
           </div>
           {showCloseButton && (

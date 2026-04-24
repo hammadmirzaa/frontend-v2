@@ -82,7 +82,7 @@ export default function DashboardTopNav({
   return (
     <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-white px-4 py-6 sm:gap-4 sm:px-6">
       <div className="flex min-w-0 shrink-0 items-center">
-        <h1 className="truncate text-base font-bold text-gray-900 sm:text-lg">{pageTitle}</h1>
+        <h1 className="truncate text-xl font-bold text-gray-900 sm:text-lg">{pageTitle}</h1>
       </div>
 
       <div className="order-3 flex min-w-0 flex-1 basis-full items-center justify-end sm:order-none sm:basis-auto">

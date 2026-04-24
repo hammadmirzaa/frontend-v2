@@ -360,7 +360,7 @@ export default function ChatbotsTab({
         </div>
       </Modal>
 
-      <div className="flex h-full flex-col  bg-[#FAFBFC] p-6 gap-6 ">
+      <div className="flex min-h-0 flex-col p-6 gap-6 ">
         <div className="border-b border-gray-200 pb-5">
           <div className="flex flex-col gap-4 sm:flex-row items-center sm:justify-between">
             <div>
@@ -405,7 +405,17 @@ export default function ChatbotsTab({
           </div>
         </div>
 
-        <div className={`overflow-y-auto p-5 ${chatbots.length === 0 ?" ": "bg-white"}  rounded-xl h-auto`}>
+        <div
+          className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl p-5 ${
+            subTab === 'deleted' && canManageDeletedChatbots
+              ? !loadingDeleted && deletedChatbots.length > 0
+                ? 'bg-white'
+                : ''
+              : !loading && chatbots.length > 0
+                ? 'bg-white'
+                : ''
+          }`}
+        >
           {subTab === 'deleted' && canManageDeletedChatbots ? (
             loadingDeleted ? (
               <div className="py-12 text-center text-gray-500">
@@ -435,14 +445,19 @@ export default function ChatbotsTab({
                 {filteredDeletedChatbots.length === 0 ? (
                   <div className="py-12 text-center text-sm text-gray-500">No deleted chatbots match your search.</div>
                 ) : (
-                  <div className="overflow-hidden ">
+                  <div className="flex min-h-0 flex-col overflow-hidden">
                     <Table
                       columns={deletedTableColumns}
                       data={paginatedDeletedChatbots}
                       keyExtractor={(row) => row.id}
                       minWidth="520px"
                     />
-                    <Pagination currentPage={page} totalPages={totalPagesDeleted} onPageChange={setPage} />
+                    <Pagination
+                      currentPage={page}
+                      totalPages={totalPagesDeleted}
+                      onPageChange={setPage}
+                      className="shrink-0"
+                    />
                   </div>
                 )}
               </>
@@ -474,7 +489,7 @@ export default function ChatbotsTab({
               {filteredChatbots.length === 0 ? (
                 <div className="py-12 text-center text-sm text-gray-500">No chatbots match your search.</div>
               ) : (
-                <div className="overflow-hidden">
+                <div className="flex min-h-0 flex-col overflow-hidden">
                   <Table
                     columns={activeTableColumns}
                     data={paginatedChatbots}
@@ -484,7 +499,12 @@ export default function ChatbotsTab({
                     sortColumnId={tableSort.column}
                     sortDirection={tableSort.dir}
                   />
-                  <Pagination currentPage={page} totalPages={totalPagesActive} onPageChange={setPage} />
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPagesActive}
+                    onPageChange={setPage}
+                    className="shrink-0"
+                  />
                 </div>
               )}
             </>

@@ -14,6 +14,8 @@ import {
   Sparkles,
   ChevronDown,
   SlidersHorizontal,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import axios from 'axios'
 import { useToast } from '../hooks/useToast'
@@ -28,6 +30,7 @@ import {
 import { cn } from '../utils/cn'
 import { cycleTableSort } from '../utils/tableSort'
 import { Button, SearchInput, Table, Pagination } from './ui'
+import Modal from './Modal'
 
 const API_URL = config.API_URL
 
@@ -70,6 +73,21 @@ function unitLabelForMetric(key) {
   if (id === 'emails') return 'emails'
   if (id === 'sms') return 'sms'
   return 'queries'
+}
+
+function maskSecretValue(value) {
+  if (!value) return ''
+  const str = String(value)
+  if (str.length <= 8) return '•'.repeat(str.length)
+  return `${str.slice(0, 2)}${'•'.repeat(Math.max(4, str.length - 5))}${str.slice(-3)}`
+}
+
+function isLikelyPineconeApiKey(value) {
+  if (!value) return false
+  const v = String(value).trim()
+  // OpenAI-style keys are not valid Pinecone keys.
+  if (v.startsWith('sk-')) return false
+  return v.length >= 12
 }
 
 /** Usage meter: title + grey subtitle, “Current Usage” row with fraction, teal bar, grey % label. */
@@ -164,8 +182,18 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
   const [pollingAllocationId, setPollingAllocationId] = useState(null)
   const [isPolling, setIsPolling] = useState(false)
   const [addonsExpanded, setAddonsExpanded] = useState(false)
+  const [isAddonsModalOpen, setIsAddonsModalOpen] = useState(false)
   const [invoiceQuery, setInvoiceQuery] = useState('')
   const [invoiceSort, setInvoiceSort] = useState({ column: null, dir: null })
+  const [visibleProviderFields, setVisibleProviderFields] = useState({
+    PINECONE_API_KEY: true,
+    OPENAI_API_KEY: false,
+  })
+  const [editingProviderFields, setEditingProviderFields] = useState({
+    PINECONE_API_KEY: false,
+    PINECONE_INDEX_NAME: false,
+    OPENAI_API_KEY: false,
+  })
 
   const ADDONS_COLLAPSE_AT = 3
 
@@ -237,6 +265,11 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
         OPENAI_API_KEY: '',
       })
       setIsEditingProviderKeys(false)
+      setEditingProviderFields({
+        PINECONE_API_KEY: false,
+        PINECONE_INDEX_NAME: false,
+        OPENAI_API_KEY: false,
+      })
       fetchProviderKeys()
       if (onProviderKeysUpdated) {
         onProviderKeysUpdated()
@@ -546,12 +579,63 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
     subscription?.setup_payment_amount ||
     subscription?.setup_payment_date
   )
-  const showProviderKeyForm = showProviderKeyStep || isEditingProviderKeys
+  const hasInlineEditsOpen =
+    editingProviderFields.PINECONE_API_KEY ||
+    editingProviderFields.PINECONE_INDEX_NAME ||
+    editingProviderFields.OPENAI_API_KEY
+  const showProviderKeyForm = showProviderKeyStep || isEditingProviderKeys || hasInlineEditsOpen
+  const shouldShowPaymentBanner = Boolean(
+    subscription &&
+      (
+        subscription.setup_payment_status === 'PENDING' ||
+        subscription.status === 'TRIAL' ||
+        (subscription.status !== 'ACTIVE' && !subscription.setup_payment_status)
+      )
+  )
 
   return (
     <>
       <ToastContainer />
       <div className="mx-auto p-6">
+        <div className='' >
+      {shouldShowPaymentBanner && (
+                    <div className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-700">
+                            <AlertCircle className="h-5 w-5" strokeWidth={2} />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-amber-950">Complete payment</h4>
+                            <p className="mt-0.5 text-sm leading-relaxed text-amber-900/90">
+                              {subscription?.setup_payment_status === 'PENDING' && subscription?.setup_payment_amount
+                                ? `A setup payment of ${formatCurrency(subscription.setup_payment_amount)} is required to activate your subscription.`
+                                : 'Complete payment to activate your subscription.'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleGetCheckoutUrl}
+                          disabled={creating}
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {creating ? (
+                            <>
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                              Loading…
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="h-4 w-4" strokeWidth={2} />
+                              Complete Payment
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  </div>
         <div className="mb-4 rounded-xl bg-white p-5">
           <h2 className="text-lg font-bold text-gray-900">Subscription &amp; Billing</h2>
           <p className="mt-1 text-sm text-gray-600">
@@ -686,7 +770,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="order-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
                         <Calendar className="h-5 w-5" strokeWidth={2} />
@@ -751,7 +835,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                         <button
                           type="button"
                           onClick={() => {
-                            document.getElementById('tenant-addons-section')?.scrollIntoView({ behavior: 'smooth' })
+                            setIsAddonsModalOpen(true)
                           }}
                           className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-teal hover:text-brand-teal-hover"
                         >
@@ -761,132 +845,162 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                     </div>
                   </div>
 
-                  {(subscription.setup_payment_status === 'PENDING' ||
-                    subscription.status === 'TRIAL' ||
-                    (subscription.status !== 'ACTIVE' && !subscription.setup_payment_status)) && (
-                    <div className="overflow-hidden rounded-2xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white p-4 shadow-sm sm:p-5">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
-                            <AlertCircle className="h-5 w-5" strokeWidth={2} />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-amber-950">Payment required</h4>
-                            <p className="mt-1 text-sm leading-relaxed text-amber-900/90">
-                              {subscription.setup_payment_status === 'PENDING' && subscription.setup_payment_amount
-                                ? `A setup payment of ${formatCurrency(subscription.setup_payment_amount)} is required to activate your subscription.`
-                                : 'Complete payment to activate your subscription.'}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleGetCheckoutUrl}
-                          disabled={creating}
-                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {creating ? (
-                            <>
-                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              Loading…
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="h-4 w-4" strokeWidth={2} />
-                              Complete payment
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
 
                   {isBasicPlan && (
                     <section
-                      className={`overflow-hidden rounded-2xl border bg-white shadow-sm ${
+                      className={`order-2 overflow-hidden rounded-2xl border bg-white shadow-sm ${
                         showProviderKeyStep ? 'border-red-200' : 'border-slate-200'
                       }`}
                     >
                       <div
-                        className={`flex items-start gap-3 border-b px-5 py-4 sm:px-6 ${
-                          showProviderKeyStep ? 'border-red-100 bg-red-50/40' : 'border-slate-100 bg-slate-50/60'
+                        className={`flex items-start gap-3 px-5 py-4 sm:px-6 ${
+                          showProviderKeyStep ? 'border-red-100 bg-red-50/40' : 'border-slate-100 bg-white'
                         }`}
                       >
-                        <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${
-                            showProviderKeyStep
-                              ? 'border-red-200 bg-white text-red-600'
-                              : 'border-slate-200 bg-white text-emerald-600'
-                          }`}
-                        >
-                          {showProviderKeyStep ? (
-                            <AlertCircle className="h-5 w-5" strokeWidth={2} />
-                          ) : (
-                            <KeyRound className="h-5 w-5" strokeWidth={2} />
-                          )}
-                        </div>
                         <div className="min-w-0 pt-0.5">
-                          <h4 className="text-sm font-bold text-slate-900 sm:text-base">Provider API keys</h4>
+                          <h4 className="text-sm font-bold text-slate-900 sm:text-base">API Configuration</h4>
                           <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                            On BASIC, Pinecone and OpenAI credentials are required before chatbots and actions work.
+                            On Basic Plan, Pinecone and OpenAI credentials are required before chatbots and actions work.
                           </p>
                         </div>
                       </div>
 
-                      <div className="p-5 sm:p-6">
-                        {loadingProviderKeys ? (
-                          <p className="text-sm text-slate-500">Loading status…</p>
-                        ) : (
-                          <div
-                            role="group"
-                            aria-label="Required provider credentials"
-                            className="grid grid-cols-1 gap-3 sm:grid-cols-3"
-                          >
-                            {[
-                              { ok: providerKeys?.PINECONE_API_KEY, label: 'Pinecone API key', id: 'pk-pinecone-key' },
-                              {
-                                ok: providerKeys?.PINECONE_INDEX_NAME,
-                                label: 'Pinecone index name',
-                                id: 'pk-pinecone-idx',
-                              },
-                              { ok: providerKeys?.OPENAI_API_KEY, label: 'OpenAI API key', id: 'pk-openai' },
-                            ].map((row) => (
-                              <div
-                                key={row.id}
-                                role="checkbox"
-                                aria-checked={Boolean(row.ok)}
-                                className={`flex min-h-0 min-w-0 items-start gap-3 rounded-xl border px-3 py-3 sm:px-4 ${
-                                  row.ok ? 'border-slate-200 bg-white' : 'border-red-200/80 bg-red-50/30'
-                                }`}
-                              >
-                                <span
-                                  className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border-2 ${
-                                    row.ok
-                                      ? 'border-emerald-600 bg-emerald-600'
-                                      : 'border-slate-300 bg-white'
-                                  }`}
-                                  aria-hidden
-                                >
-                                  {row.ok ? (
-                                    <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
-                                  ) : null}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium text-slate-900">{row.label}</p>
-                                  <p
-                                    className={`mt-0.5 text-xs ${
-                                      row.ok ? 'text-emerald-700' : 'text-red-700'
-                                    }`}
-                                  >
-                                    {row.ok ? 'Configured' : 'Required — complete the form below'}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                      <div className="p-3 sm:p-4">
+                        {loadingProviderKeys ? <p className="text-sm text-slate-500">Loading status…</p> : null}
 
-                        {!showProviderKeyStep && !showProviderKeyForm && (
+                        <div className="space-y-3">
+                          {[
+                            {
+                              id: 'PINECONE_API_KEY',
+                              label: 'Pinecone API Key',
+                              value: providerKeys?.PINECONE_API_KEY || '',
+                              placeholder: 'Please Enter a Valid API Key',
+                              secret: true,
+                            },
+                            {
+                              id: 'PINECONE_INDEX_NAME',
+                              label: 'Pinecone Index Name',
+                              value: providerKeys?.PINECONE_INDEX_NAME || '',
+                              placeholder: 'Please Enter an Index Name',
+                              secret: false,
+                            },
+                            {
+                              id: 'OPENAI_API_KEY',
+                              label: 'OpenAI API Key',
+                              value: providerKeys?.OPENAI_API_KEY || '',
+                              placeholder: 'Please Enter a Valid API Key',
+                              secret: true,
+                            },
+                          ].map((field) => {
+                            const isConfigured = Boolean(field.value)
+                            const isPineconeApiField = field.id === 'PINECONE_API_KEY'
+                            const hasPineconeKeyError =
+                              isPineconeApiField && isConfigured && !isLikelyPineconeApiKey(field.value)
+                            const showValue =
+                              field.secret && !visibleProviderFields[field.id]
+                                ? maskSecretValue(field.value)
+                                : field.value
+                            const formValue = providerKeyForm[field.id] ?? ''
+                            const isEditingThisField = Boolean(editingProviderFields[field.id])
+                            return (
+                              <div key={field.id} className="space-y-1.5">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  {field.label}
+                                </p>
+                                <div
+                                  className="flex items-center justify-between gap-2 rounded-lg bg-slate-100 px-3 py-2.5"
+                                >
+                                  {isEditingThisField ? (
+                                    <input
+                                      type={
+                                        field.secret && !visibleProviderFields[field.id] ? 'password' : 'text'
+                                      }
+                                      autoComplete="off"
+                                      placeholder={
+                                        field.id === 'PINECONE_INDEX_NAME' ? 'your-index-name' : 'sk-...'
+                                      }
+                                      value={formValue}
+                                      onChange={(e) =>
+                                        setProviderKeyForm((prev) => ({
+                                          ...prev,
+                                          [field.id]: e.target.value,
+                                        }))
+                                      }
+                                      className="w-full min-w-0 bg-transparent px-1 py-1 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:bg-transparent"
+                                    />
+                                  ) : (
+                                    <span
+                                      className={`truncate text-sm ${
+                                        isConfigured
+                                          ? hasPineconeKeyError
+                                            ? 'text-red-600'
+                                            : 'text-slate-900'
+                                          : 'font-medium text-red-600'
+                                      }`}
+                                    >
+                                      {isConfigured ? showValue : field.placeholder}
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-1">
+                                    {field.secret && (isConfigured || isEditingThisField) && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setVisibleProviderFields((prev) => ({
+                                            ...prev,
+                                            [field.id]: !prev[field.id],
+                                          }))
+                                        }
+                                        className="rounded p-1 text-slate-500 hover:text-slate-700"
+                                        aria-label={visibleProviderFields[field.id] ? 'Hide key' : 'Show key'}
+                                      >
+                                        {visibleProviderFields[field.id] ? (
+                                          <img src="/svgs/subscriptions/eye-disable.svg" alt="Eye Off" className="h-4 w-4 object-contain" />
+                                        ) : (
+                                          <Eye className="h-4 w-4" strokeWidth={2} />
+                                        )}
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setIsEditingProviderKeys(true)
+                                        setEditingProviderFields((prev) => ({
+                                          ...prev,
+                                          [field.id]: true,
+                                        }))
+                                        setProviderKeyForm((prev) => ({
+                                          ...prev,
+                                          PINECONE_API_KEY:
+                                            prev.PINECONE_API_KEY ||
+                                            providerKeys?.PINECONE_API_KEY ||
+                                            '',
+                                          PINECONE_INDEX_NAME:
+                                            prev.PINECONE_INDEX_NAME ||
+                                            providerKeys?.PINECONE_INDEX_NAME ||
+                                            '',
+                                          OPENAI_API_KEY:
+                                            prev.OPENAI_API_KEY ||
+                                            providerKeys?.OPENAI_API_KEY ||
+                                            '',
+                                        }))
+                                      }}
+                                      className="rounded p-1 text-slate-500 hover:text-slate-700"
+                                      aria-label={`Edit ${field.label}`}
+                                    >
+                                      <img src="/svgs/subscriptions/pencil.svg" alt="Edit" className="h-4 w-4 object-contain" />
+                                    </button>
+                                  </div>
+                                </div>
+                                {hasPineconeKeyError && !showProviderKeyForm ? (
+                                  <p className="px-1 text-sm font-medium text-red-600">Please Enter a Valid API Key</p>
+                                ) : null}
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* {!showProviderKeyStep && !showProviderKeyForm && (
                           <div className="mt-5">
                             <button
                               type="button"
@@ -896,111 +1010,50 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                               Edit API keys
                             </button>
                           </div>
-                        )}
+                        )} */}
 
                         {showProviderKeyForm && (
-                          <div className="mt-5 space-y-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
-                            <p className="text-sm text-slate-600">
-                              {showProviderKeyStep
-                                ? 'Enter all values below. Keys are stored securely and never shown in full after save.'
-                                : 'Enter new values only for keys you want to rotate.'}
-                            </p>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-4">
-                              <div className="min-w-0">
-                                <label
-                                  htmlFor="tenant-pk-pinecone"
-                                  className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-                                >
-                                  Pinecone API key
-                                </label>
-                                <input
-                                  id="tenant-pk-pinecone"
-                                  type="password"
-                                  autoComplete="off"
-                                  placeholder="sk-…"
-                                  value={providerKeyForm.PINECONE_API_KEY}
-                                  onChange={(e) =>
-                                    setProviderKeyForm((prev) => ({ ...prev, PINECONE_API_KEY: e.target.value }))
-                                  }
-                                  className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <label
-                                  htmlFor="tenant-pk-index"
-                                  className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-                                >
-                                  Pinecone index name
-                                </label>
-                                <input
-                                  id="tenant-pk-index"
-                                  type="text"
-                                  autoComplete="off"
-                                  placeholder="your-index-name"
-                                  value={providerKeyForm.PINECONE_INDEX_NAME}
-                                  onChange={(e) =>
-                                    setProviderKeyForm((prev) => ({ ...prev, PINECONE_INDEX_NAME: e.target.value }))
-                                  }
-                                  className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <label
-                                  htmlFor="tenant-pk-openai"
-                                  className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"
-                                >
-                                  OpenAI API key
-                                </label>
-                                <input
-                                  id="tenant-pk-openai"
-                                  type="password"
-                                  autoComplete="off"
-                                  placeholder="sk-…"
-                                  value={providerKeyForm.OPENAI_API_KEY}
-                                  onChange={(e) =>
-                                    setProviderKeyForm((prev) => ({ ...prev, OPENAI_API_KEY: e.target.value }))
-                                  }
-                                  className="w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
-                                />
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-4">
+                          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-200/80 pt-4">
+                            <button
+                              type="button"
+                              onClick={handleSaveProviderKeys}
+                              disabled={savingProviderKeys}
+                              className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {savingProviderKeys
+                                ? 'Saving…'
+                                : showProviderKeyStep
+                                  ? 'Save keys'
+                                  : 'Update keys'}
+                            </button>
+                            {!showProviderKeyStep && (
                               <button
                                 type="button"
-                                onClick={handleSaveProviderKeys}
-                                disabled={savingProviderKeys}
-                                className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                onClick={() => {
+                                  setIsEditingProviderKeys(false)
+                                  setEditingProviderFields({
+                                    PINECONE_API_KEY: false,
+                                    PINECONE_INDEX_NAME: false,
+                                    OPENAI_API_KEY: false,
+                                  })
+                                  setProviderKeyForm({
+                                    PINECONE_API_KEY: '',
+                                    PINECONE_INDEX_NAME: '',
+                                    OPENAI_API_KEY: '',
+                                  })
+                                }}
+                                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                               >
-                                {savingProviderKeys
-                                  ? 'Saving…'
-                                  : showProviderKeyStep
-                                    ? 'Save keys'
-                                    : 'Update keys'}
+                                Cancel
                               </button>
-                              {!showProviderKeyStep && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsEditingProviderKeys(false)
-                                    setProviderKeyForm({
-                                      PINECONE_API_KEY: '',
-                                      PINECONE_INDEX_NAME: '',
-                                      OPENAI_API_KEY: '',
-                                    })
-                                  }}
-                                  className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                            </div>
+                            )}
                           </div>
                         )}
                       </div>
                     </section>
                   )}
 
-                  <div
+                  {/* <div
                     id="tenant-addons-section"
                     className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm"
                   >
@@ -1100,7 +1153,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>
@@ -1191,14 +1244,14 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                         className="w-full sm:w-64"
                         dashboardInput
                       />
-                      <Button type="button" variant="outline" className="h-10 shrink-0 gap-2 px-3 text-sm">
+                      {/* <Button type="button" variant="outline" className="h-10 shrink-0 gap-2 px-3 text-sm">
                         <SlidersHorizontal className="h-4 w-4" strokeWidth={2} />
                         Filters
                         <ChevronDown className="h-4 w-4" strokeWidth={2} />
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
-                  <div className="overflow-hidden">
+                  <div className="flex min-h-0 flex-col overflow-hidden">
                     <Table
                       columns={[
                         {
@@ -1271,7 +1324,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                       onSortClick={onInvoiceSort}
                       sortColumnId={invoiceSort.column}
                       sortDirection={invoiceSort.dir}
-                      className="pt-0 sm:pt-0 [&>div]:pt-0"
+                      className="!pt-0 sm:!pt-0"
                       minWidth="720px"
                     />
                     {invoiceTotalPages > 1 ? (
@@ -1279,7 +1332,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                         currentPage={invoicePage}
                         totalPages={invoiceTotalPages}
                         onPageChange={setInvoicePage}
-                        className="border-t border-gray-100 px-4 pb-4 sm:px-6"
+                        className="shrink-0 border-t border-gray-100 px-4 pb-4 sm:px-6"
                       />
                     ) : null}
                   </div>
@@ -1290,6 +1343,68 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={isAddonsModalOpen}
+        onClose={() => setIsAddonsModalOpen(false)}
+        title="Add-ons"
+        panelClassName="max-w-3xl"
+      >
+        <div className="space-y-3">
+          {addons.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+              No add-ons available right now.
+            </div>
+          ) : (
+            addons.map((a) => {
+              const units = a.allocated_units ?? a.allocated_queries ?? 0
+              const typeRaw = (a.usage_type || 'queries').toLowerCase()
+              const typeLabel = typeRaw === 'ai_queries' ? 'queries' : typeRaw
+              const paymentLabel = String(a.payment_status || '').replace(/_/g, ' ')
+              return (
+                <div
+                  key={a.id}
+                  className="flex flex-col gap-2 rounded-xl border border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight text-slate-900">
+                      {Number(units).toLocaleString()} {typeLabel}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {paymentLabel}
+                      <span className="mx-1 text-slate-300">|</span>
+                      {a.allocated_at ? formatDateDMY(a.allocated_at) : '—'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-slate-900">
+                      {a.currency || 'USD'} {Number(a.price_amount || 0).toFixed(2)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePayAddon(a.id)}
+                      disabled={isPolling && pollingAllocationId === a.id}
+                      className="rounded-lg bg-brand-teal px-5 py-2 text-sm font-semibold text-white hover:bg-brand-teal-hover disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isPolling && pollingAllocationId === a.id ? 'Waiting…' : 'Pay'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={() => setIsAddonsModalOpen(false)}
+            className="w-full rounded-lg border border-brand-teal px-4 py-2.5 text-sm font-semibold text-brand-teal hover:bg-brand-teal/5"
+          >
+            Close
+          </button>
+        </div>
+      </Modal>
 
       {isEditPlanModalOpen && subscription && (
         <div

@@ -852,7 +852,7 @@ function SubscriptionAdminList() {
                   )
                 })}
               </ul>
-              <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 md:block">
+              <div className="hidden max-h-[calc(100vh-26rem)] overflow-auto rounded-2xl border border-slate-200 md:block">
                 <table className="w-full min-w-[880px] text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/90">

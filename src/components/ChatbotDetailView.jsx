@@ -85,6 +85,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
   const [knowledgePickerQuery, setKnowledgePickerQuery] = useState('')
   const [pendingKnowledgeDocId, setPendingKnowledgeDocId] = useState(null)
   const [attachingKnowledgeDocId, setAttachingKnowledgeDocId] = useState(null)
+  const [updatingKnowledgeDocId, setUpdatingKnowledgeDocId] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [documentToDelete, setDocumentToDelete] = useState(null)
@@ -537,13 +538,28 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     }
   }
 
+  const refreshAllTenantDocuments = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/documents/`)
+      setAllTenantDocuments(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      /* keep existing list */
+    }
+  }
+
   const openKnowledgePicker = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/documents/`)
-      const list = Array.isArray(response.data) ? response.data : []
-      setAllTenantDocuments(list)
-      const available = list.filter((d) => d.chatbot_id !== chatbotId)
-      setPendingKnowledgeDocId(available[0]?.id ?? null)
+      const [allRes, linkedRes] = await Promise.all([
+        axios.get(`${API_URL}/api/documents/`),
+        axios.get(`${API_URL}/api/documents/?chatbot_id=${encodeURIComponent(chatbotId)}`),
+      ])
+      const allList = Array.isArray(allRes.data) ? allRes.data : []
+      const linkedList = Array.isArray(linkedRes.data) ? linkedRes.data : []
+      setAllTenantDocuments(allList)
+      setDocuments(linkedList)
+      const attachedIds = new Set(linkedList.map((d) => d.id))
+      const firstAvailable = allList.find((d) => !attachedIds.has(d.id))
+      setPendingKnowledgeDocId(firstAvailable?.id ?? null)
       setKnowledgePickerQuery('')
       setKnowledgePickerOpen(true)
     } catch (error) {
@@ -559,6 +575,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
         chatbot_id: chatbotId,
       })
       await fetchDocuments()
+      await refreshAllTenantDocuments()
       setKnowledgePickerOpen(false)
       setPendingKnowledgeDocId(null)
       showToast('Knowledge linked to this chatbot successfully', 'success')
@@ -570,14 +587,30 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     }
   }
 
+  // const handleUnaddKnowledgeFromModal = async (doc) => {
+  //   setUpdatingKnowledgeDocId(doc.id)
+  //   try {
+  //     await axios.post(`${API_URL}/api/documents/${doc.id}/assign-chatbot`, {
+  //       chatbot_id: null,
+  //     })
+  //     await fetchDocuments()
+  //     await refreshAllTenantDocuments()
+  //     showToast('Knowledge removed from this chatbot', 'success')
+  //     if (onChatbotUpdated) onChatbotUpdated()
+  //   } catch (error) {
+  //     showToast(formatApiErrorDetail(error, 'Failed to remove knowledge from chatbot'), 'error')
+  //   } finally {
+  //     setUpdatingKnowledgeDocId(null)
+  //   }
+  // }
+
   const filteredKnowledgePickerDocs = useMemo(() => {
     const q = knowledgePickerQuery.trim().toLowerCase()
     return allTenantDocuments.filter((d) => {
-      if (d.chatbot_id === chatbotId) return false
       if (!q) return true
       return (d.filename || '').toLowerCase().includes(q)
     })
-  }, [allTenantDocuments, chatbotId, knowledgePickerQuery])
+  }, [allTenantDocuments, knowledgePickerQuery])
 
   const knowledgePickerPrimaryText = pendingKnowledgeDocId ? 'Add Knowledge' : 'Done'
 
@@ -798,7 +831,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
   return (
     <>
       <ToastContainer />
-      <div className="flex min-h-[min(720px,calc(100vh-5rem))] flex-col bg-[#FAFBFC] p-6">
+      <div className="flex min-h-[min(720px,calc(100vh-5rem))] flex-1 flex-col bg-[#FAFBFC] p-6">
         <div className="flex items-center justify-between border-b border-gray-100 pb-5">
           <div className="flex items-center gap-4">
             <button type="button" onClick={onBack} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100">
@@ -837,7 +870,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
           </div>
         </div>
 
-        <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
+        <div className="mt-5 flex min-h-0 flex-1 flex-col overflow-y-auto">
           {activeTab === 'customization' && (
             <div className="space-y-6">
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -1096,7 +1129,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                 ) : null}
               </div>
 
-              <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+              {/* <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
                 <button
                   type="button"
                   onClick={() => setLanguageSectionOpen((o) => !o)}
@@ -1144,7 +1177,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   </div>
                 </div>
                 ) : null}
-              </div>
+              </div> */}
 
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => { fetchChatbot(); fetchEmbedCode() }}>
@@ -1159,21 +1192,19 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
           )}
 
           {activeTab === 'guardrails' && (
-            <div className="space-y-6">
-              {guardrails.length === 0 ? (
-                <div className="">
-                  <EmptyState
-                    title="Your chatbot’s Guardrails are not configured."
-                    description="Guardrails define the boundaries of what your bot can and cannot say, ensuring safe, compliant, and brand-aligned interactions."
-                  >
-                    <div className="mt-6">
-                      <Button type="button" variant="primary" onClick={openGuardrailPicker}>
-                        Setup Now
-                      </Button>
-                    </div>
-                  </EmptyState>
+            guardrails.length === 0 ? (
+              <EmptyState
+                title="Your chatbot’s Guardrails are not configured."
+                description="Guardrails define the boundaries of what your bot can and cannot say, ensuring safe, compliant, and brand-aligned interactions."
+              >
+                <div className="mt-6">
+                  <Button type="button" variant="primary" onClick={openGuardrailPicker}>
+                    Setup Now
+                  </Button>
                 </div>
-              ) : (
+              </EmptyState>
+            ) : (
+              <div className="space-y-6">
                 <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
                   <div className="mb-4 flex flex-col gap-3 lg:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -1197,7 +1228,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                       No guardrails match your search or filters.
                     </div>
                   ) : (
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200">
                       <Table
                         columns={guardrailsColumns}
                         data={paginatedGuardrailsForTable}
@@ -1206,23 +1237,23 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                         onSortClick={onGuardrailTableSort}
                         sortColumnId={guardrailTableSort.column}
                         sortDirection={guardrailTableSort.dir}
-                        className="pt-0 sm:pt-0 [&>div]:pt-0"
+                        className="!pt-0 sm:!pt-0"
                       />
                       <Pagination
                         currentPage={guardrailListPage}
                         totalPages={guardrailTotalPages}
                         onPageChange={setGuardrailListPage}
-                        className="border-t border-gray-100 px-4 pb-4 sm:px-6"
+                        className="shrink-0 border-t border-gray-100 px-4 pb-4 sm:px-6"
                       />
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )
           )}
 
           {activeTab === 'knowledge' && (
-            <div className="space-y-6">
+            <>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1232,18 +1263,16 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                 onChange={handleFilePick}
               />
               {documents.length === 0 ? (
-                <div className="">
-                  <EmptyState
-                    title="Your chatbot’s Knowledge Base is not configured."
-                    description="The Knowledge Base provides the reference documents and data your bot uses to answer questions accurately and consistently."
-                  >
-                    <div className="mt-6">
-                      <Button type="button" variant="primary" onClick={openKnowledgePicker}>
-                        Setup Now
-                      </Button>
-                    </div>
-                  </EmptyState>
-                </div>
+                <EmptyState
+                  title="Your chatbot’s Knowledge Base is not configured."
+                  description="The Knowledge Base provides the reference documents and data your bot uses to answer questions accurately and consistently."
+                >
+                  <div className="mt-6">
+                    <Button type="button" variant="primary" onClick={openKnowledgePicker}>
+                      Setup Now
+                    </Button>
+                  </div>
+                </EmptyState>
               ) : (
                 <div className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5">
                   <div className="mb-4 flex flex-col gap-3 lg:flex-row sm:items-center sm:justify-between">
@@ -1257,15 +1286,15 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                         onChange={(e) => setDocumentsQuery(e.target.value)}
                         className="w-full sm:w-[240px]"
                       />
-                      <button
+                      {/* <button
                         type="button"
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700"
                       >
                         <SlidersHorizontal className="h-4 w-4 text-gray-500" />
                         Filters
                         <ChevronDown className="h-4 w-4 text-gray-500" />
-                      </button>
-                      <Button type="button" variant="outline" onClick={openKnowledgePicker}>
+                      </button> */}
+                      <Button type="button" variant="primary" onClick={openKnowledgePicker}>
                         Add Knowledge
                       </Button>
                       {/* <Button
@@ -1284,7 +1313,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   {sortedFilteredDocuments.length === 0 ? (
                     <div className="py-10 text-center text-sm text-gray-500">No files match your search.</div>
                   ) : (
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200">
                       <Table
                         columns={knowledgeColumns}
                         data={paginatedKnowledgeForTable}
@@ -1293,19 +1322,19 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                         onSortClick={onKnowledgeTableSort}
                         sortColumnId={knowledgeTableSort.column}
                         sortDirection={knowledgeTableSort.dir}
-                        className="pt-0 sm:pt-0 [&>div]:pt-0"
+                        className="!pt-0 sm:!pt-0"
                       />
                       <Pagination
                         currentPage={knowledgeListPage}
                         totalPages={knowledgeTotalPages}
                         onPageChange={setKnowledgeListPage}
-                        className="border-t border-gray-100 px-4 pb-4 sm:px-6"
+                        className="shrink-0 border-t border-gray-100 px-4 pb-4 sm:px-6"
                       />
                     </div>
                   )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -1561,6 +1590,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
         onClose={() => {
           setKnowledgePickerOpen(false)
           setPendingKnowledgeDocId(null)
+          setUpdatingKnowledgeDocId(null)
         }}
         title="Add Knowledge"
         panelClassName="max-w-2xl"
@@ -1588,32 +1618,50 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
           <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             {filteredKnowledgePickerDocs.length === 0 ? (
               <div className="py-8 text-center text-sm text-gray-500">
-                No documents available to link. Upload files from the Knowledge Base page, or upload a new file here.
+                No documents in your workspace yet. Add files from the Knowledge Base tab, then link them here.
               </div>
             ) : (
               filteredKnowledgePickerDocs.map((doc) => {
+                const attached = doc.chatbot_id === chatbotId
                 const selected = pendingKnowledgeDocId === doc.id
                 const elsewhere = Boolean(doc.chatbot_id && doc.chatbot_id !== chatbotId)
                 return (
                   <div
                     key={doc.id}
                     className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
-                      selected
-                        ? 'border-brand-teal bg-brand-teal/[0.06]'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
+                      attached
+                        ? 'border-gray-200 bg-gray-50'
+                        : selected
+                          ? 'border-brand-teal bg-brand-teal/[0.06]'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-gray-900">{doc.filename || 'Document'}</p>
                         <p className="mt-0.5 text-xs text-gray-500">
-                          {elsewhere
-                            ? 'Linked to another chatbot — adding moves it to this bot'
-                            : 'Available from your workspace knowledge library'}
+                          {attached
+                            ? 'Linked to this chatbot'
+                            : elsewhere
+                              ? 'Linked to another chatbot — adding moves it to this bot'
+                              : 'Available from your workspace knowledge library'}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {selected ? (
+                        {attached ? (
+                          <>
+                            <span className="text-xs font-semibold text-gray-500">Added</span>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="px-3 py-1.5 text-xs"
+                              onClick={() => handleUnaddKnowledgeFromModal(doc)}
+                              disabled={updatingKnowledgeDocId === doc.id}
+                            >
+                              {updatingKnowledgeDocId === doc.id ? 'Unadding…' : 'Unadd'}
+                            </Button>
+                          </>
+                        ) : selected ? (
                           <span className="text-xs font-semibold text-brand-teal">Selected</span>
                         ) : (
                           <Button

@@ -80,17 +80,11 @@ export default function Login() {
         <div className="mb-8 space-y-3 text-center">
           <h1 className="text-2xl font-semibold text-gray-900">Welcome back</h1>
           <p className="text-sm text-gray-600">
-            Don&apos;t have an account yet?{' '}
-            <Link
-              to="/signup"
-              className="font-normal text-gray-600 underline underline-offset-2 hover:text-gray-800"
-            >
-              Register here
-            </Link>
+          Enter your details to access your workspace.
           </p>
         </div>
 
-        <GoogleSignInButton />
+        {/* <GoogleSignInButton /> */}
 
         <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
           {error && (
@@ -124,7 +118,7 @@ export default function Login() {
             onToggleVisibility={() => setShowPassword((v) => !v)}
           />
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+          <label className="flex cursor-pointer items-center gap-2 text-xs mb-2 text-gray-600">
             <Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
             Remember me
           </label>

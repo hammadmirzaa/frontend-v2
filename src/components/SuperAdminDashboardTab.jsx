@@ -410,7 +410,7 @@ export default function SuperAdminDashboardTab() {
                   Sort columns to compare
                 </div>
               </div>
-              <div className="overflow-x-auto">
+              <div className="max-h-[calc(100vh-26rem)] overflow-auto">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/80 text-left text-xs uppercase tracking-wide text-slate-500">

@@ -1,5 +1,5 @@
 export { SearchInput } from './SearchInput'
-export { Table } from './Table'
+export { Table, TABLE_VIEWPORT_MAX_HEIGHT_CLASS, TABLE_VIEWPORT_HEIGHT_CLASS } from './Table'
 export { Pagination } from './Pagination'
 export { Button } from './Button'
 export { SelectChatbotModal } from './SelectChatbotModal'

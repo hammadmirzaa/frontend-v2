@@ -13,7 +13,7 @@ import { useToast } from '../hooks/useToast'
 import config from '../config'
 import ConversationDetailView from './ConversationDetailView'
 import EmptyState from './EmptyState'
-import { SearchInput, Button, SelectDropdown, DateRangeFilterField } from './ui'
+import { SearchInput, Button, SelectDropdown, DateRangeFilterField, Pagination } from './ui'
 import { COLORS } from '../lib/designTokens'
 import { cn } from '../utils/cn'
 
@@ -329,93 +329,14 @@ export default function HistoryTab() {
     const renderPagination = () => {
         if (totalPages <= 1) return null
 
-        const pages = []
-        const maxVisiblePages = 5
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
-
-        if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1)
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pages.push(i)
-        }
-
         return (
             <div className="flex shrink-0 flex-col gap-3 border-t border-gray-100 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs    tabular-nums text-gray-500">
-                    Page {currentPage} of {totalPages}
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                        className="rounded-md px-3 py-2.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                        Previous
-                    </button>
-
-                    {startPage > 1 && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setCurrentPage(1)}
-                                className="flex h-7 min-w-7 items-center justify-center rounded-md text-[11px] font-semibold text-gray-700 transition-colors hover:bg-gray-100"
-                            >
-                                01
-                            </button>
-                            {startPage > 2 && <span className="px-0.5 text-[11px] text-gray-400">...</span>}
-                        </>
-                    )}
-
-                    {pages.map((page) => (
-                        <button
-                            key={page}
-                            type="button"
-                            onClick={() => setCurrentPage(page)}
-                            className={cn(
-                                'flex h-7 min-w-7 items-center justify-center rounded-md text-[11px] font-semibold transition-colors',
-                                currentPage === page
-                                    ? { color: COLORS.BRAND }
-                                    : 'text-gray-700 hover:bg-gray-100'
-                            )}
-                            style={
-                                currentPage === page
-                                    ? { backgroundColor: COLORS.PLAYGROUND_CHAT_HIGHLIGHT_BG }
-                                    : undefined
-                            }
-                        >
-                            {page.toString().padStart(2, '0')}
-                        </button>
-                    ))}
-
-                    {endPage < totalPages && (
-                        <>
-                            {endPage < totalPages - 1 && (
-                                <span className="px-0.5 text-[11px] text-gray-400">...</span>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => setCurrentPage(totalPages)}
-                                className="flex h-7 min-w-7 items-center justify-center rounded-md text-[11px] font-semibold text-gray-700 transition-colors hover:bg-gray-100"
-                            >
-                                {totalPages.toString().padStart(2, '0')}
-                            </button>
-                        </>
-                    )}
-
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                        className="rounded-md px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-40"
-                        style={{ backgroundColor: COLORS.BRAND }}
-                    >
-                        Next
-                    </button>
-                </div>
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    className="w-full !px-0 !pt-0"
+                />
             </div>
         )
     }
@@ -444,7 +365,7 @@ export default function HistoryTab() {
                     onNavigateChatbot={handleBreadcrumbChatbot}
                 />
             ) : (
-            <div className="flex h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden bg-[#F5F6F8] p-2 sm:p-4">
+            <div className="flex h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden p-2 sm:p-4">
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:flex-row lg:gap-4">
                     {/* Chatbots — master list */}
                     <aside className="flex w-full min-h-0 shrink-0 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm lg:max-h-full lg:w-[300px] lg:max-w-[340px]">
@@ -466,7 +387,7 @@ export default function HistoryTab() {
                                 className="[&_label]:text-xs [&_button]:py-2 [&_button]:text-xs"
                             />
                         </div>
-                        <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-2 pb-4 [-webkit-overflow-scrolling:touch] max-h-[min(520px,45vh)] sm:max-h-[min(560px,55vh)] lg:max-h-none">
+                        <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-2 pb-4 [-webkit-overflow-scrolling:touch] max-h-[min(520px,45vh)] sm:max-h-[min(560px,55vh)] lg:max-h-none">
                             <li className="px-1">
                                 <button
                                     type="button"
@@ -474,16 +395,11 @@ export default function HistoryTab() {
                                     className={cn(
                                         'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors',
                                         appliedFilters.chatbotId === ''
-                                            ? 'bg-brand-teal/[0.08] ring-1 ring-brand-teal/15'
+                                            ? COLORS.PLAYGROUND_CHAT_HIGHLIGHT_BG
                                             : 'hover:bg-gray-50'
                                     )}
                                 >
-                                    <div
-                                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                                        style={{ backgroundColor: COLORS.BRAND_ACTIVE_BG }}
-                                    >
-                                        <Bot className="h-4 w-4 shrink-0" style={{ color: COLORS.BRAND }} strokeWidth={2} />
-                                    </div>
+                                        <img src="/svgs/conversations/chatbott.svg" alt="Chatbot" className="h-9 w-9 object-contain" />
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-semibold text-gray-900">All chatbots</p>
                                         <p className="truncate text-[10px] text-gray-500">Every conversation</p>
@@ -508,11 +424,7 @@ export default function HistoryTab() {
                                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-50"
                                                 style={selected ? { backgroundColor: COLORS.BRAND_ACTIVE_BG } : undefined}
                                             >
-                                                <Bot
-                                                    className="h-4 w-4 shrink-0 text-gray-500"
-                                                    style={selected ? { color: COLORS.BRAND } : undefined}
-                                                    strokeWidth={2}
-                                                />
+                                                <img src="/svgs/conversations/chatbott.svg" alt="Chatbot" className="h-9 w-9 object-contain" />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold text-gray-900">{cb.name || 'Chatbot'}</p>
@@ -571,7 +483,7 @@ export default function HistoryTab() {
                                             : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
                                     )}
                                 >
-                                    <SlidersHorizontal className="h-4 w-4" strokeWidth={2} style={{ color: COLORS.BRAND }} />
+                                    <img src="/svgs/followups/filter.svg" alt="Filters" className="h-4 w-4 object-contain" />
                                     Filters
                                     <ChevronDown
                                         className={cn(
@@ -670,17 +582,17 @@ export default function HistoryTab() {
                         </p>
 
                         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+                            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
                                 {loading ? (
                                     <div className="flex min-h-[220px] items-center justify-center">
                                         <div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-brand-teal" />
                                     </div>
                                 ) : conversations.length === 0 ? (
                                     <EmptyState
-                                        icon={MessagesSquare}
+                                        icon="/conversations/chatempty"
                                         title="No conversations yet"
                                         description="Once you begin a conversation, it will appear here."
-                                        className="py-16 [&_h3]:text-sm [&_p]:text-xs"
+                                        className="[&_h3]:text-sm [&_p]:text-xs"
                                     />
                                 ) : (
                                     <ul className="divide-y divide-gray-100">
@@ -713,7 +625,7 @@ export default function HistoryTab() {
                                                                     •
                                                                 </span>
                                                                 <span className="inline-flex items-center gap-0.5 tabular-nums">
-                                                                    <MessageCircle className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
+                                                                    <img src="/svgs/followups/emailnsms.svg" alt="Message" className="h-3 w-3 text-gray-400 object-contain" />
                                                                     {msgCount}
                                                                 </span>
                                                                 <span className="text-gray-300" aria-hidden>
