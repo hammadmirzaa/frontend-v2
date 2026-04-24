@@ -30,6 +30,9 @@ const ACCEPT_UPLOAD =
 
 const PAGE_SIZE = 10
 
+/** SelectDropdown menus portal to `document.body`; filter panel must not treat those clicks as "outside". */
+const LIBRARIES_FILTER_SELECT_BYPASS = 'libraries-knowledge-filter'
+
 const FILE_TYPE_FILTER_OPTIONS = [
   { value: '', label: 'All Files' },
   { value: 'pdf', label: 'PDF' },
@@ -190,7 +193,10 @@ export default function LibrariesTab() {
       const clickedFilterTrigger = filterDropdownRef.current?.contains(event.target)
       const clickedFilterPanel = filterPanelRef.current?.contains(event.target)
       const clickedDateRangeUi = event.target.closest?.('[data-date-range-filter-ui]')
-      if (!clickedFilterTrigger && !clickedFilterPanel && !clickedDateRangeUi) {
+      const clickedPortaledSelectMenu = event.target.closest?.(
+        `[data-document-close-bypass="${LIBRARIES_FILTER_SELECT_BYPASS}"]`,
+      )
+      if (!clickedFilterTrigger && !clickedFilterPanel && !clickedDateRangeUi && !clickedPortaledSelectMenu) {
         setFilterModalOpen(false)
       }
     }
@@ -556,7 +562,7 @@ export default function LibrariesTab() {
       <Modal
         isOpen={addModalOpen}
         onClose={closeAddModal}
-        title="Add Knowledge"
+        title="Create Knowledge"
         subtitle={addStep === 'pick' ? 'Choose how you want to provide knowledge.' : undefined}
         showCloseButton={!uploading}
         panelClassName="max-w-[640px] max-h-[min(92vh,620px)]"
@@ -761,11 +767,11 @@ export default function LibrariesTab() {
             <EmptyState
               icon="guardrails"
               title="No Knowledge Base yet!"
-              description="Add Knowledge base by uploading a document or by writing manually."
+              description="Create knowledge by uploading a document or by writing manually."
             >
               <div className="mt-6">
                 <Button type="button" variant="primary" onClick={openAddModal}>
-                  Add Knowledge
+                  Create Knowledge
                 </Button>
               </div>
             </EmptyState>
@@ -841,6 +847,7 @@ export default function LibrariesTab() {
                                 onChange={setDraftFilterChatbotId}
                                 options={chatbotOptions}
                                 variant="field"
+                                documentCloseBypassId={LIBRARIES_FILTER_SELECT_BYPASS}
                                 className="!space-y-1.5 [&>label]:text-sm [&>label]:font-semibold [&>label]:text-gray-900 [&_div.relative>button]:min-h-9 [&_div.relative>button]:py-2 [&_div.relative>button]:text-xs [&_div.relative>button]:font-medium py-2 "
                               />
                               <SelectDropdown
@@ -849,6 +856,7 @@ export default function LibrariesTab() {
                                 onChange={setDraftFileTypeFilter}
                                 options={FILE_TYPE_FILTER_OPTIONS}
                                 variant="field"
+                                documentCloseBypassId={LIBRARIES_FILTER_SELECT_BYPASS}
                                 className="!space-y-1.5 [&>label]:text-sm [&>label]:font-semibold [&>label]:text-gray-900 [&_div.relative>button]:min-h-9 [&_div.relative>button]:py-2 [&_div.relative>button]:text-sm [&_div.relative>button]:font-medium pb-2"
                               />
                               <DateRangeFilterField

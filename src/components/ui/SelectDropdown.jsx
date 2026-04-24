@@ -18,6 +18,7 @@ import { cn } from '../../utils/cn'
  * @param {import('react').ReactNode} [props.leading] — icon or label before the value (inside the trigger)
  * @param {string[]} [props.excludeValuesFromMenu] — option values not shown as rows (e.g. placeholder `''`)
  * @param {boolean} [props.fieldBorderless] — when `variant="field"`, no stroke on trigger (fills only)
+ * @param {string} [props.documentCloseBypassId] — when the menu is portaled to `document.body`, optional id on the menu root so parent `document` mousedown listeners can ignore clicks inside the menu (e.g. Knowledge Base filter panel).
  */
 export function SelectDropdown({
   label,
@@ -31,6 +32,7 @@ export function SelectDropdown({
   leading = null,
   excludeValuesFromMenu = [],
   fieldBorderless = false,
+  documentCloseBypassId,
 }) {
   const [open, setOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState({
@@ -221,6 +223,9 @@ export function SelectDropdown({
                 width: `${menuPosition.width}px`,
                 maxHeight: `${menuPosition.maxHeight}px`,
               }}
+              {...(documentCloseBypassId
+                ? { 'data-document-close-bypass': documentCloseBypassId }
+                : {})}
             >
               {menuRowOptions.map((opt) => {
                 const isSelected = opt.value === value

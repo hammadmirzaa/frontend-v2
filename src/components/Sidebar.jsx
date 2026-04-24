@@ -143,6 +143,19 @@ export default function Sidebar({
 
   const playgroundSectionActive = PLAYGROUND_SECTION_IDS.includes(activeTab);
 
+  const navigateHomeFromLogo = () => {
+    if (!onNavigate) return;
+    if (isSuperUser) {
+      onNavigate("dashboards");
+      return;
+    }
+    if (pmPortalBlocked && roleAllowedTabs?.length) {
+      onNavigate(roleAllowedTabs[0]);
+      return;
+    }
+    onNavigate("playground");
+  };
+
   /** Icon-only rail when sidebar is collapsed (full playground section). */
   const renderCollapsedPlaygroundRail = () => {
     if (!collapsed || !showPlaygroundGroup) return null;
@@ -368,11 +381,18 @@ export default function Sidebar({
         <div
           className={`flex min-h-[1rem] min-w-0 flex-1 items-center gap-1 ${collapsed ? "justify-center" : ""}`}
         >
-          <img
-            src={collapsed ? "/meichat-logo.png" : "/logo.png"}
-            alt="MeiChat"
-            className={`block shrink-0 object-contain ${collapsed ? "mx-auto h-10 w-10 max-h-11 object-center" : "object-left h-8 w-auto max-h-10 max-w-[min(100%,10.5rem)]"}`}
-          />
+          <button
+            type="button"
+            onClick={navigateHomeFromLogo}
+            className={`rounded-lg text-left outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-brand-teal/40 focus-visible:ring-offset-2 ${collapsed ? "p-0" : "p-0.5"}`}
+            aria-label="MeiChat home"
+          >
+            <img
+              src={collapsed ? "/meichat-logo.png" : "/logo.png"}
+              alt="MeiChat"
+              className={`pointer-events-none block shrink-0 object-contain ${collapsed ? "mx-auto h-10 w-10 max-h-11 object-center" : "object-left h-8 w-auto max-h-10 max-w-[min(100%,10.5rem)]"}`}
+            />
+          </button>
         </div>
         <button
           type="button"
