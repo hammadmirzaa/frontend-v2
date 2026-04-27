@@ -111,7 +111,7 @@ export default function AdminTab() {
     const [searchQuery, setSearchQuery] = useState('')
     const [tenantFilter, setTenantFilter] = useState('')
     const [page, setPage] = useState(1)
-    const [pageSize] = useState(10)
+    const [pageSize] = useState(20)
     const [totalPages, setTotalPages] = useState(1)
     const [updating, setUpdating] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)

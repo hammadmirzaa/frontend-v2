@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn'
 import { COLORS } from '../../lib/designTokens'
 
 /** Default max height for dashboard tables; grows with content, scrolls when taller. */
-export const TABLE_VIEWPORT_MAX_HEIGHT_CLASS = 'max-h-[calc(100vh-26rem)]'
+export const TABLE_VIEWPORT_MAX_HEIGHT_CLASS = 'max-h-[calc(100vh-20rem)]'
 
 /** @deprecated Use `TABLE_VIEWPORT_MAX_HEIGHT_CLASS` */
 export const TABLE_VIEWPORT_HEIGHT_CLASS = TABLE_VIEWPORT_MAX_HEIGHT_CLASS

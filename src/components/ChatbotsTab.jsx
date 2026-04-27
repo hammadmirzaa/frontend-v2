@@ -15,7 +15,7 @@ import { formatDateDMY } from '../utils/formatDateDMY'
 import { cycleTableSort } from '../utils/tableSort'
 
 const API_URL = config.API_URL
-const PAGE_SIZE = 6
+const PAGE_SIZE = 20
 
 export default function ChatbotsTab({
   onSelectChatbot = null,

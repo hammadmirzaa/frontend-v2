@@ -9,6 +9,7 @@ import EmptyState from './EmptyState'
 import {
   Button,
   DateRangeFilterField,
+  FilterButton,
   GuardrailFormModal,
   Pagination,
   SearchInput,
@@ -20,7 +21,7 @@ import { COLORS } from '../lib/designTokens'
 import { cycleTableSort } from '../utils/tableSort'
 
 const API_URL = config.API_URL
-const GUARDRAILS_PAGE_SIZE = 6
+const GUARDRAILS_PAGE_SIZE = 20
 
 const initialFormState = {
   id: null,
@@ -63,6 +64,11 @@ export default function GuardrailsTab() {
   const [appliedStatus, setAppliedStatus] = useState('all')
   const [appliedFromDate, setAppliedFromDate] = useState('')
   const [appliedToDate, setAppliedToDate] = useState('')
+  const activeGuardrailFilterCount =
+    (appliedLinkedChatbot !== 'all' ? 1 : 0) +
+    (appliedStatus !== 'all' ? 1 : 0) +
+    (appliedFromDate ? 1 : 0) +
+    (appliedToDate ? 1 : 0)
   const [page, setPage] = useState(1)
   const [tableSort, setTableSort] = useState({ column: null, dir: null })
   const [topicInput, setTopicInput] = useState({ allowed: '', denied: '' })
@@ -499,10 +505,11 @@ export default function GuardrailsTab() {
                 <div className="flex flex-wrap items-center gap-3">
                   <SearchInput value={query} onChange={(e) => setQuery(e.target.value)} className="w-full sm:w-[240px]" />
                   <div ref={filterMenuRef} className="relative">
-                    <button
+                    <FilterButton
                       type="button"
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      active={activeGuardrailFilterCount > 0}
                       onClick={() => setFilterMenuOpen((open) => !open)}
+                      className="px-4"
                       aria-expanded={filterMenuOpen}
                       aria-haspopup="dialog"
                       aria-controls="guardrails-filter-panel"
@@ -513,7 +520,12 @@ export default function GuardrailsTab() {
                         className={`h-4 w-4 text-gray-500 transition-transform ${filterMenuOpen ? 'rotate-180' : ''}`}
                         aria-hidden
                       />
-                    </button>
+                      {activeGuardrailFilterCount > 0 ? (
+                        <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-brand-teal px-1 text-[10px] font-bold leading-none text-white">
+                          {activeGuardrailFilterCount}
+                        </span>
+                      ) : null}
+                    </FilterButton>
 
                     {filterMenuOpen ? (
                       <div

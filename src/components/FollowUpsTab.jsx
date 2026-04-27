@@ -24,7 +24,7 @@ import { useToast } from '../hooks/useToast'
 import config from '../config'
 import FollowUpModal from './FollowUpModal'
 import { COLORS } from '../lib/designTokens'
-import { SelectDropdown, DateRangeFilterField, Pagination } from './ui'
+import { SelectDropdown, DateRangeFilterField, Pagination, FilterButton } from './ui'
 
 const API_URL = config.API_URL
 
@@ -109,6 +109,12 @@ export default function FollowUpsTab() {
   const [chatbotFilter, setChatbotFilter] = useState('all')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const activeFollowUpFilterCount =
+    (typeFilter !== 'all' ? 1 : 0) +
+    (sortBy !== 'due_asc' ? 1 : 0) +
+    (chatbotFilter !== 'all' ? 1 : 0) +
+    (fromDate ? 1 : 0) +
+    (toDate ? 1 : 0)
   const [draftTypeFilter, setDraftTypeFilter] = useState('all')
   const [draftSortBy, setDraftSortBy] = useState('due_asc')
   const [draftChatbotFilter, setDraftChatbotFilter] = useState('all')
@@ -426,7 +432,7 @@ export default function FollowUpsTab() {
     })
   }, [preLaneFilteredFollowups, lane, sortBy])
 
-  const pageSize = 6
+  const pageSize = 20
   const totalPages = Math.max(1, Math.ceil(laneFilteredFollowups.length / pageSize))
   const safePage = Math.min(currentPage, totalPages)
   const pagedFollowups = laneFilteredFollowups.slice((safePage - 1) * pageSize, safePage * pageSize)
@@ -489,7 +495,7 @@ export default function FollowUpsTab() {
           </div>
 
           <div ref={filterDropdownRef} className="relative">
-            <button
+            <FilterButton
               ref={filterTriggerRef}
               type="button"
               onClick={() => {
@@ -500,12 +506,18 @@ export default function FollowUpsTab() {
                 setDraftToDate(toDate)
                 setFilterModalOpen((prev) => !prev)
               }}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              active={activeFollowUpFilterCount > 0}
+              className="px-4"
             >
               <img src="/svgs/followups/filter.svg" alt="Filters" className="h-4 w-4" />
               Filters
               <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${filterModalOpen ? 'rotate-180' : ''}`} />
-            </button>
+              {activeFollowUpFilterCount > 0 ? (
+                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-brand-teal px-1 text-[10px] font-bold leading-none text-white">
+                  {activeFollowUpFilterCount}
+                </span>
+              ) : null}
+            </FilterButton>
 
             {filterModalOpen && (
               createPortal(

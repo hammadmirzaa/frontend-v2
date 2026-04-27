@@ -381,7 +381,7 @@ export default function LeadsTab() {
     return list;
   }, [filteredLeads, leadSort]);
 
-  const pageSize = 8;
+  const pageSize = 20;
   const totalPages = Math.max(
     1,
     Math.ceil(sortedFilteredLeads.length / pageSize),

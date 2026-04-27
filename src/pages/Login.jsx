@@ -127,7 +127,7 @@ export default function Login() {
             Sign in
           </AuthPrimaryButton>
 
-          <p className="text-center text-xs text-gray-600">
+          {/* <p className="text-center text-xs text-gray-600">
             Don&apos;t remember your password?{' '}
             <a
               href="#"
@@ -136,7 +136,7 @@ export default function Login() {
             >
               Reset here
             </a>
-          </p>
+          </p> */}
         </form>
       </AuthCard>
     </AuthPageLayout>

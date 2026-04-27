@@ -16,7 +16,7 @@ import Modal from './Modal'
 import Spinner from './Spinner'
 import EmptyState from './EmptyState'
 import ManualKnowledgeEntryView from './ManualKnowledgeEntryView'
-import { SearchInput, Table, Pagination, Button, SelectDropdown, DateRangeFilterField } from './ui'
+import { SearchInput, Table, Pagination, Button, FilterButton, SelectDropdown, DateRangeFilterField } from './ui'
 import { formatDateDMY } from '../utils/formatDateDMY'
 import { formatApiErrorDetail } from '../utils/formatApiError'
 import { cn } from '../utils/cn'
@@ -28,7 +28,7 @@ const API_URL = config.API_URL
 const ACCEPT_UPLOAD =
   '.pdf,.doc,.docx,.txt,.csv,.tsv,.xls,.xlsx,.json'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 20
 
 /** SelectDropdown menus portal to `document.body`; filter panel must not treat those clicks as "outside". */
 const LIBRARIES_FILTER_SELECT_BYPASS = 'libraries-knowledge-filter'
@@ -791,7 +791,7 @@ export default function LibrariesTab() {
                       className="w-full sm:w-[220px]"
                     />
                     <div ref={filterDropdownRef} className="relative">
-                      <button
+                      <FilterButton
                         ref={filterTriggerRef}
                         type="button"
                         onClick={() => {
@@ -801,12 +801,8 @@ export default function LibrariesTab() {
                           setDraftToDate(toDate)
                           setFilterModalOpen((prev) => !prev)
                         }}
-                        className={cn(
-                          'inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
-                          activeFilterCount
-                            ? 'border-brand-teal/40 bg-brand-teal/[0.06] text-brand-teal'
-                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                        )}
+                        active={activeFilterCount > 0}
+                        className="gap-1.5"
                       >
                         <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-gray-500" strokeWidth={2} />
                         Filters
@@ -821,7 +817,7 @@ export default function LibrariesTab() {
                             filterModalOpen ? 'rotate-180' : ''
                           )}
                         />
-                      </button>
+                      </FilterButton>
 
                       {filterModalOpen &&
                         createPortal(

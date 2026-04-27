@@ -1049,14 +1049,14 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
                     />
                   </div>
                   <div className="mt-4 flex flex-wrap items-center justify-end gap-3 px-4">
-                    <Button
+                    {/* <Button
                       type="button"
                       variant="outline"
                       onClick={handleVoiceToggle}
                       disabled={!isSupported}
                     >
                       Start Voice Chat
-                    </Button>
+                    </Button> */}
                     <Button
                       type="button"
                       variant="primary"

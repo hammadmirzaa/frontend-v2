@@ -13,7 +13,7 @@ import { useToast } from '../hooks/useToast'
 import config from '../config'
 import ConversationDetailView from './ConversationDetailView'
 import EmptyState from './EmptyState'
-import { SearchInput, Button, SelectDropdown, DateRangeFilterField, Pagination } from './ui'
+import { SearchInput, Button, FilterButton, SelectDropdown, DateRangeFilterField, Pagination } from './ui'
 import { COLORS } from '../lib/designTokens'
 import { cn } from '../utils/cn'
 
@@ -85,6 +85,8 @@ export default function HistoryTab() {
     const [searchQuery, setSearchQuery] = useState('')
     const [isFilterOpen, setIsFilterOpen] = useState(false)
     const filterDropdownRef = useRef(null)
+    const searchDebounceRef = useRef(null)
+    const skipFetchOnPageRef = useRef(false)
     const [chatbotSidebarQuery, setChatbotSidebarQuery] = useState('')
     const [chatbotSort, setChatbotSort] = useState('recent')
     const [selectedConversation, setSelectedConversation] = useState(null)
@@ -95,7 +97,7 @@ export default function HistoryTab() {
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
-    const pageSize = 10
+    const pageSize = 20
 
     // Filters
     const [filters, setFilters] = useState({
@@ -166,8 +168,31 @@ export default function HistoryTab() {
 
     // Fetch conversations when page or applied filters change
     useEffect(() => {
+        if (skipFetchOnPageRef.current) {
+            skipFetchOnPageRef.current = false
+            return
+        }
         fetchConversations()
-    }, [currentPage, appliedFilters])
+    }, [currentPage])
+
+    useEffect(() => {
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current)
+        }
+
+        skipFetchOnPageRef.current = true
+        setCurrentPage(1)
+
+        searchDebounceRef.current = setTimeout(() => {
+            fetchConversations({ pageOverride: 1 })
+        }, 250)
+
+        return () => {
+            if (searchDebounceRef.current) {
+                clearTimeout(searchDebounceRef.current)
+            }
+        }
+    }, [searchQuery, appliedFilters])
 
     const fetchChatbots = async () => {
         try {
@@ -178,12 +203,13 @@ export default function HistoryTab() {
         }
     }
 
-    const fetchConversations = async () => {
+    const fetchConversations = async ({ pageOverride } = {}) => {
         setLoading(true)
         try {
+            const pageToFetch = pageOverride ?? currentPage
             // Build query params
             const params = {
-                page: currentPage,
+                page: pageToFetch,
                 page_size: pageSize,
                 sort_by: appliedFilters.sortBy
             }
@@ -238,17 +264,6 @@ export default function HistoryTab() {
             showToast('Failed to fetch conversations: ' + (error.response?.data?.detail || error.message), 'error')
         } finally {
             setLoading(false)
-        }
-    }
-
-    const handleSearch = useCallback(() => {
-        setCurrentPage(1)
-        fetchConversations()
-    }, [searchQuery, appliedFilters])
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleSearch()
         }
     }
 
@@ -365,7 +380,7 @@ export default function HistoryTab() {
                     onNavigateChatbot={handleBreadcrumbChatbot}
                 />
             ) : (
-            <div className="flex h-[calc(100vh-7rem)] max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden p-2 sm:p-4">
+            <div className="flex max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden p-2 sm:p-4">
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:flex-row lg:gap-4">
                     {/* Chatbots — master list */}
                     <aside className="flex w-full min-h-0 shrink-0 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm lg:max-h-full lg:w-[300px] lg:max-w-[340px]">
@@ -448,11 +463,7 @@ export default function HistoryTab() {
                             </p>
                         </div>
 
-                        <div
-                            className="flex flex-wrap items-stretch gap-2 border-b border-gray-100 px-4 py-2.5"
-                            onKeyDown={handleKeyPress}
-                            role="presentation"
-                        >
+                        <div className="flex flex-wrap items-stretch gap-2 border-b border-gray-100 px-4 py-2.5">
                             <SearchInput
                                 placeholder="Search conversations…"
                                 value={searchQuery}
@@ -460,29 +471,17 @@ export default function HistoryTab() {
                                 className="max-w-none min-w-0 flex-1"
                                 inputClassName="h-9 text-xs placeholder:text-[11px]"
                             />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="h-9 shrink-0 px-3 text-xs font-semibold"
-                                onClick={handleSearch}
-                            >
-                                Search
-                            </Button>
                             <div ref={filterDropdownRef} className="relative shrink-0">
-                                <button
-                                    type="button"
-                                    id="history-filters-trigger"
-                                    aria-haspopup="dialog"
-                                    aria-expanded={isFilterOpen}
-                                    aria-controls={isFilterOpen ? 'history-filter-panel' : undefined}
-                                    onClick={() => setIsFilterOpen((v) => !v)}
-                                    className={cn(
-                                        'inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors',
-                                        appliedFilterCount > 0
-                                            ? 'border-brand-teal/40 bg-brand-teal/[0.06] text-brand-teal'
-                                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                                    )}
-                                >
+                                <FilterButton
+                                type="button"
+                                id="history-filters-trigger"
+                                aria-haspopup="dialog"
+                                aria-expanded={isFilterOpen}
+                                aria-controls={isFilterOpen ? 'history-filter-panel' : undefined}
+                                onClick={() => setIsFilterOpen((v) => !v)}
+                                active={appliedFilterCount > 0}
+                                className="h-9 shrink-0 px-3 text-xs"
+                            >
                                     <img src="/svgs/followups/filter.svg" alt="Filters" className="h-4 w-4 object-contain" />
                                     Filters
                                     <ChevronDown
@@ -499,7 +498,7 @@ export default function HistoryTab() {
                                             {appliedFilterCount}
                                         </span>
                                     ) : null}
-                                </button>
+                                </FilterButton>
 
                                 {isFilterOpen ? (
                                     <div

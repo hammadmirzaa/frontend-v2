@@ -255,7 +255,7 @@ function SubscriptionAdminList() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [planFilter, setPlanFilter] = useState('all')
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(10)
+  const [pageSize] = useState(20)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [activeView, setActiveView] = useState('subscriptions') // 'subscriptions' or 'plans'

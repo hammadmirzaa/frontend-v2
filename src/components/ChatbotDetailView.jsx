@@ -36,7 +36,7 @@ import { cn } from '../utils/cn'
 const API_URL = config.API_URL
 const ACCEPT_UPLOAD = '.pdf,.doc,.docx,.txt,.csv,.tsv,.xls,.xlsx,.json'
 /** Paginate guardrails / knowledge tables inside chatbot detail */
-const DETAIL_TABLE_PAGE_SIZE = 6
+const DETAIL_TABLE_PAGE_SIZE = 20
 
 function toneFromPersonality(personality) {
   if (!personality) return 'neutral'
