@@ -32,7 +32,7 @@ export default function WizardFooter({
             type="button"
             onClick={onSkip}
             disabled={busy}
-            className="text-sm font-semibold text-gray-900 hover:text-gray-800 disabled:opacity-50"
+            className="text-xs font-semibold text-gray-400 hover:text-gray-600 disabled:opacity-50"
           >
             Skip for now
           </button>

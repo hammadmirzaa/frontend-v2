@@ -98,7 +98,7 @@ export function useCreateChatbotWizard(showToast) {
   const persistBasicInfo = useCallback(async () => {
     const err = validateChatbotName(name)
     if (err) {
-      showToast(err, 'error')
+      showToast('Chatbot name is required when creating a new chatbot.', 'error')
       return false
     }
 
@@ -151,12 +151,6 @@ export function useCreateChatbotWizard(showToast) {
     if (!id) return false
 
     const gName = guardrailName.trim()
-    const gErr = validateChatbotName(gName)
-    if (gErr) {
-      showToast('Guardrail name: ' + gErr, 'error')
-      return false
-    }
-
     const customRestrictionText = customRestrictionLines
       .map((s) => String(s).trim())
       .filter(Boolean)
@@ -177,7 +171,17 @@ export function useCreateChatbotWizard(showToast) {
       Boolean(customRestrictionText)
 
     if (!hasRestriction) {
-      showToast('Select at least one restriction or add a custom one.', 'error')
+      return true
+    }
+
+    if (!gName) {
+      showToast('Guardrail name is required when adding restrictions.', 'error')
+      return false
+    }
+
+    const gErr = validateChatbotName(gName)
+    if (gErr) {
+      showToast('Guardrail name: ' + gErr, 'error')
       return false
     }
 

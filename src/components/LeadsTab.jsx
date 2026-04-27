@@ -53,6 +53,7 @@ export default function LeadsTab() {
   const [loadingLeadDetail, setLoadingLeadDetail] = useState(false);
   const [loadingFollowups, setLoadingFollowups] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [expandedTimelineItems, setExpandedTimelineItems] = useState([]);
   const [selectedLead, setSelectedLead] = useState(null);
   const [detailTab, setDetailTab] = useState("overview");
   const [timelineFilter, setTimelineFilter] = useState("all");
@@ -290,6 +291,12 @@ export default function LeadsTab() {
 
   const closeFollowUpModal = () => {
     setFollowupModalOpen(false);
+  };
+
+  const toggleTimelineItemExpansion = (itemId) => {
+    setExpandedTimelineItems((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId],
+    );
   };
 
   const stats = useMemo(() => {
@@ -1200,14 +1207,15 @@ export default function LeadsTab() {
                                     : "Scheduled"}
                                 </span>
                               </div>
-                              <p className="line-clamp-2 border-b border-gray-200 pb-2 text-xs text-gray-900">
+                              <p className={`${expandedTimelineItems.includes(item.id) ? '' : 'line-clamp-2'} border-b border-gray-200 pb-2 text-xs text-gray-900`}>
                                 {item.description}
                               </p>
                               <button
                                 type="button"
                                 className="mt-3 text-xs font-semibold text-brand-teal"
+                                onClick={() => toggleTimelineItemExpansion(item.id)}
                               >
-                                View Details
+                                {expandedTimelineItems.includes(item.id) ? 'Hide Details' : 'View Details'}
                               </button>
                             </div>
                           </div>

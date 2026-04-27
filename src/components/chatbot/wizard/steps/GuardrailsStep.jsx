@@ -57,7 +57,7 @@ export default function GuardrailsStep({
       <div className="mt-4 space-y-5">
         <div>
           <label className="mb-1.5 block text-sm font-bold text-gray-800">
-            Guardrail name
+            Guardrail name <span className="text-red-500">*</span>
           </label>
           <TextField
             value={guardrailName}

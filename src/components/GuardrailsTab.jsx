@@ -464,7 +464,7 @@ export default function GuardrailsTab() {
         </div>
       </Modal>
 
-      <div className="flex h-full flex-col rounded-lg shadow-lg p-6 gap-6">
+      <div className="flex h-full flex-col min-h-0 rounded-lg shadow-lg p-6 gap-6">
         <div className="border-b pb-5">
           <div className="flex items-center justify-between">
             <div>

@@ -486,10 +486,28 @@ export default function FollowUpModal({
 
       // Call follow-ups don't require email or message content
 
-      // Remove call-specific fields for create payloads only.
-      const submitData = isEditing
-        ? normalizedData
-        : (({ call_status, call_notes, ...rest }) => rest)(normalizedData);
+      // Remove extraneous fields based on follow-up type.
+      const submitData = { ...normalizedData };
+      if (normalizedData.followup_type !== "call") {
+        delete submitData.call_status;
+        delete submitData.call_notes;
+      }
+      if (normalizedData.followup_type === "email") {
+        delete submitData.message_content;
+      }
+      if (
+        normalizedData.followup_type === "message" ||
+        normalizedData.followup_type === "whatsapp"
+      ) {
+        delete submitData.email_subject;
+        delete submitData.email_content;
+        delete submitData.internal_notes;
+      }
+      if (normalizedData.followup_type === "call") {
+        delete submitData.email_subject;
+        delete submitData.email_content;
+        delete submitData.message_content;
+      }
 
       // datetime-local is local time; convert to UTC ISO for backend storage.
       const scheduledDate = new Date(normalizedData.scheduled_at);

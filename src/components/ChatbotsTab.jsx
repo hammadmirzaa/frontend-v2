@@ -360,7 +360,7 @@ export default function ChatbotsTab({
         </div>
       </Modal>
 
-      <div className="flex min-h-0 flex-col p-6 gap-6 ">
+      <div className="flex h-full min-h-0 flex-col p-6 gap-6 ">
         <div className="border-b border-gray-200 pb-5">
           <div className="flex flex-col gap-4 sm:flex-row items-center sm:justify-between">
             <div>

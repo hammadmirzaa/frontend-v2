@@ -32,6 +32,19 @@ function generateUiId() {
   return `u_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function getSessionTitle(session) {
+  const tags = Array.isArray(session.semantic_tags) ? session.semantic_tags : [];
+  if (tags.length > 0) {
+    return String(tags[0]).replace(/_/g, " ");
+  }
+
+  if (typeof session.message_count === "number") {
+    return `${session.message_count} messages`;
+  }
+
+  return `Session ${String(session.session_id || session.id || "").slice(-6)}`;
+}
+
 function formatMessageTime(ts) {
   if (ts == null || Number.isNaN(Number(ts))) return "";
   return new Date(Number(ts)).toLocaleTimeString(undefined, {
@@ -75,6 +88,8 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
     ],
   }));
   const [chatSessionQuery, setChatSessionQuery] = useState("");
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(false);
 
   const [chatbots, setChatbots] = useState([]);
   const [selectedChatbot, setSelectedChatbot] = useState(null);
@@ -150,6 +165,108 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
     }
   }, []);
 
+  const fetchSessions = useCallback(
+    async (chatbotId) => {
+      if (!chatbotId) return;
+      setSessionsLoading(true);
+      try {
+        const response = await axios.get(`${API_URL}/api/conversations/`, {
+          params: {
+            page: 1,
+            page_size: 20,
+            chatbot_id: chatbotId,
+            source: "playground",
+          },
+        });
+        const items = Array.isArray(response.data.items)
+          ? response.data.items
+          : [];
+        const loadedSessions = items.map((session) => {
+          const updatedAt = new Date(
+            session.last_accessed_at || session.updated_at || session.created_at,
+          ).getTime();
+          return {
+            uiId: session.session_id,
+            apiSessionId: session.session_id,
+            title: getSessionTitle(session),
+            updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
+          };
+        });
+
+        setSessions((prev) => {
+          const baseSession = {
+            uiId: SEED_UI_ID,
+            apiSessionId: generateSessionId(),
+            title: "New conversation",
+            updatedAt: Date.now(),
+          };
+          const sessionMap = new Map();
+          [baseSession, ...loadedSessions].forEach((session) => {
+            sessionMap.set(session.uiId, session);
+          });
+          return Array.from(sessionMap.values());
+        });
+      } catch (error) {
+        console.error("Failed to fetch sessions:", error);
+        showToast("Failed to load chat sessions", "error");
+      } finally {
+        setSessionsLoading(false);
+      }
+    },
+    [showToast],
+  );
+
+  const fetchSessionDetails = useCallback(
+    async (sessionIdToLoad) => {
+      if (!sessionIdToLoad) return;
+      setSessionLoading(true);
+      try {
+        const response = await axios.get(`${API_URL}/api/conversations/${sessionIdToLoad}`);
+        const session = response.data;
+        const messageList = Array.isArray(session.messages) ? session.messages : [];
+        const mappedMessages = messageList.map((msg) => ({
+          role: msg.role || "assistant",
+          content: msg.content || "",
+          createdAt:
+            msg.timestamp || msg.created_at
+              ? new Date(msg.timestamp || msg.created_at).getTime()
+              : Date.now(),
+        }));
+
+        setMessagesMap((prev) => ({
+          ...prev,
+          [sessionIdToLoad]: mappedMessages,
+        }));
+
+        setSessions((prev) =>
+          prev.map((item) =>
+            item.uiId === sessionIdToLoad
+              ? {
+                  ...item,
+                  title: getSessionTitle(session),
+                  updatedAt:
+                    new Date(session.last_accessed_at || session.updated_at || session.created_at).getTime() || Date.now(),
+                }
+              : item,
+          ),
+        );
+
+        if (session.chatbot_id && selectedChatbot?.id !== session.chatbot_id) {
+          const matching = chatbots.find((bot) => bot.id === session.chatbot_id);
+          if (matching) {
+            setSelectedChatbot(matching);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch session details:", error);
+        showToast("Failed to load session details", "error");
+      } finally {
+        setSessionLoading(false);
+      }
+    },
+    [chatbots, selectedChatbot, showToast],
+  );
+
   useEffect(() => {
     (async () => {
       try {
@@ -195,6 +312,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
             }
 
             setSelectedChatbot(chatbot);
+            fetchSessions(chatbot.id);
           }
         } else if (selectedChatbotId === null) {
           prevSelectedChatbotIdRef.current = null;
@@ -203,7 +321,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
         console.error("Error in useEffect:", error);
       }
     })();
-  }, [selectedChatbotId, chatbots, getWelcomeMessage]);
+  }, [selectedChatbotId, chatbots, getWelcomeMessage, fetchSessions]);
 
   const fetchChatbots = async () => {
     setLoadingChatbots(true);
@@ -211,8 +329,9 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
       const response = await axios.get(`${API_URL}/api/chatbots/`);
       setChatbots(response.data);
       if (response.data.length > 0 && !selectedChatbot) {
-        setSelectedChatbot(response.data[0]);
-        const welcomeMessage = await getWelcomeMessage(response.data[0].id);
+        const firstBot = response.data[0];
+        setSelectedChatbot(firstBot);
+        const welcomeMessage = await getWelcomeMessage(firstBot.id);
         setMessagesMap({
           [SEED_UI_ID]: [
             {
@@ -222,6 +341,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
             },
           ],
         });
+        fetchSessions(firstBot.id);
       }
     } catch (error) {
       console.error("Failed to fetch chatbots:", error);
@@ -380,6 +500,7 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
     setSelectedChatbot(chatbot);
     setInput("");
     lastMessageRef.current = null;
+    fetchSessions(chatbot.id);
     const welcomeMessage = await getWelcomeMessage(chatbot.id);
     patchMessages(activeUiId, [
       { role: "assistant", content: welcomeMessage, createdAt: Date.now() },
@@ -770,6 +891,15 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
             />
           </div>
           <ul className="max-h-[min(520px,50vh)] px-4 flex-1 divide-y divide-gray-100 overflow-y-auto lg:max-h-none">
+            {sessionsLoading ? (
+              <li className="px-4 py-4 text-sm text-gray-500">
+                Loading sessions…
+              </li>
+            ) : filteredSessions.length === 0 ? (
+              <li className="px-4 py-4 text-sm text-gray-500">
+                No sessions found for this chatbot.
+              </li>
+            ) : null}
             {filteredSessions.map((s) => {
               const active = s.uiId === activeUiId;
               return (
@@ -780,6 +910,9 @@ export default function PlaygroundTab({ selectedChatbotId = null }) {
                       setActiveUiId(s.uiId);
                       setInput("");
                       setTranscript("");
+                      if (!messagesMap[s.uiId]) {
+                        fetchSessionDetails(s.apiSessionId);
+                      }
                     }}
                     className={cn(
                       "w-full px-4 py-4 flex justify-between items-center rounded-lg text-left transition-colors",

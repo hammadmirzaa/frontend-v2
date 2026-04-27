@@ -37,6 +37,17 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const getPasswordValidationMessage = (value) => {
+    if (!value) return ''
+    if (value.length < 8) return 'Password must be at least 8 characters long.'
+    if (!/[A-Z]/.test(value)) return 'Password must contain at least one uppercase letter.'
+    if (!/[!@#$%^&*(),.?"{}|<>\[\]\\/`~;:\-_+=]/.test(value))
+      return 'Password must contain at least one special character.'
+    return ''
+  }
+
+  const passwordValidationMessage = getPasswordValidationMessage(password)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -51,6 +62,13 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    const passwordValidationMessage = getPasswordValidationMessage(password)
+    if (passwordValidationMessage) {
+      setError('Please fix the password below.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -117,6 +135,11 @@ export default function Login() {
             showPassword={showPassword}
             onToggleVisibility={() => setShowPassword((v) => !v)}
           />
+          {password && passwordValidationMessage ? (
+            <p className="mt-2 text-xs font-medium text-red-600">
+              {passwordValidationMessage}
+            </p>
+          ) : null}
 
           <label className="flex cursor-pointer items-center gap-2 text-xs mb-2 text-gray-600">
             <Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />

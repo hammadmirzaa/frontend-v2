@@ -22,9 +22,10 @@ import {
 import axios from 'axios'
 import { useToast } from '../hooks/useToast'
 import config from '../config'
+import Modal from './Modal'
 import FollowUpModal from './FollowUpModal'
 import { COLORS } from '../lib/designTokens'
-import { SelectDropdown, DateRangeFilterField, Pagination, FilterButton } from './ui'
+import { SelectDropdown, DateRangeFilterField, Pagination, FilterButton, Button } from './ui'
 
 const API_URL = config.API_URL
 
@@ -126,6 +127,8 @@ export default function FollowUpsTab() {
   const [filterPanelPosition, setFilterPanelPosition] = useState({ top: 0, left: 0, width: 352, placement: 'bottom' })
   const [selectedFollowUp, setSelectedFollowUp] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [followupToDelete, setFollowupToDelete] = useState(null)
   const [stats, setStats] = useState(null)
   const [schedulerStatus, setSchedulerStatus] = useState(null)
   const [runningScheduler, setRunningScheduler] = useState(false)
@@ -263,11 +266,13 @@ export default function FollowUpsTab() {
     }
   }
 
-  const deleteFollowup = async (followupId) => {
-    if (!window.confirm('Are you sure you want to delete this follow-up? This action cannot be undone.')) {
-      return
-    }
+  const confirmDeleteFollowup = (followup) => {
+    setFollowupToDelete(followup)
+    setDeleteModalOpen(true)
+    setActionMenuOpenId(null)
+  }
 
+  const deleteFollowup = async (followupId) => {
     try {
       await axios.delete(`${API_URL}/api/followups/${followupId}`)
       showToast('Follow-up deleted successfully', 'success')
@@ -276,6 +281,9 @@ export default function FollowUpsTab() {
     } catch (error) {
       console.error('Failed to delete follow-up:', error)
       showToast('Failed to delete follow-up: ' + (error.response?.data?.detail || error.message), 'error')
+    } finally {
+      setDeleteModalOpen(false)
+      setFollowupToDelete(null)
     }
   }
 
@@ -437,6 +445,43 @@ export default function FollowUpsTab() {
   const safePage = Math.min(currentPage, totalPages)
   const pagedFollowups = laneFilteredFollowups.slice((safePage - 1) * pageSize, safePage * pageSize)
 
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false)
+    setFollowupToDelete(null)
+  }
+
+  const deleteModalTitle = followupToDelete
+    ? `Cancel follow-up for ${followupToDelete.lead_name || followupToDelete.lead_email || 'selected lead'}`
+    : 'Cancel follow-up'
+
+  const deleteModalBody = (
+    <div className="space-y-4">
+      <p className="text-gray-700">
+        Are you sure you want to delete this follow-up?
+      </p>
+      <p className="text-sm text-gray-500">
+        This action cannot be undone.
+      </p>
+      <div className="flex justify-end gap-3 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCloseDeleteModal}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          onClick={() => deleteFollowup(followupToDelete?.id)}
+          disabled={!followupToDelete}
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
+  )
+
   const percent = (num, den) => (den > 0 ? `${Math.round((num / den) * 100)}%` : '0%')
   const total = stats?.total_followups || followups.length || 0
   const sentCount = stats?.by_status?.sent || 0
@@ -464,6 +509,13 @@ export default function FollowUpsTab() {
   return (
     <div className=" pt-6 px-4 md:px-6">
       <ToastContainer />
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        title={deleteModalTitle}
+      >
+        {deleteModalBody}
+      </Modal>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {metricCards.map((card) => (
@@ -722,10 +774,7 @@ export default function FollowUpsTab() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            deleteFollowup(followup.id)
-                            setActionMenuOpenId(null)
-                          }}
+                          onClick={() => confirmDeleteFollowup(followup)}
                           className="flex w-full items-center gap-2 border-t border-gray-100 px-4 py-3 text-left text-xs font-semibold text-gray-900 hover:bg-gray-50"
                         >
                           <X className="h-5 w-5 text-brand-teal" />
@@ -894,7 +943,7 @@ export default function FollowUpsTab() {
                         Edit
                       </button>
                       <button
-                        onClick={() => deleteFollowup(followup.id)}
+                        onClick={() => confirmDeleteFollowup(followup)}
                         className="text-red-600 hover:text-red-900"
                       >
                         <Trash2 size={16} />

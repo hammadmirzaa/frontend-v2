@@ -85,7 +85,7 @@ export default function DashboardTopNav({
         <h1 className="truncate text-xl font-bold text-gray-900 sm:text-lg">{pageTitle}</h1>
       </div>
 
-      <div className="order-3 flex min-w-0 flex-1 basis-full items-center justify-end sm:order-none sm:basis-auto">
+      {/* <div className="order-3 flex min-w-0 flex-1 basis-full items-center justify-end sm:order-none sm:basis-auto">
         <SearchInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -93,7 +93,7 @@ export default function DashboardTopNav({
           className="w-full max-w-md rounded-sm"
           dashboardInput
         />
-      </div>
+      </div> */}
 
       <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
         <button

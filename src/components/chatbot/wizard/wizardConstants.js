@@ -35,7 +35,7 @@ export function mapToneToPersonality(tone) {
 
 export function validateChatbotName(name) {
   const s = name.trim()
-  if (s.length < 3 || s.length > 40) return 'Use 3–40 characters.'
+  if (s.length < 3 || s.length > 40) return 'Use 3-40 characters.'
   if (!/^[a-zA-Z0-9][a-zA-Z0-9\s\-_]*$/.test(s)) return 'Use letters, numbers, spaces, hyphens, or underscores.'
   return null
 }
