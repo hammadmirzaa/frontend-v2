@@ -69,6 +69,8 @@ export default function DashboardHome({
             support if you believe this is a mistake.
           </p>
         </div>
+      ) : activeTab === 'subscription' && isAdmin && !isSuperUser ? (
+        <TenantSubscriptionTab onProviderKeysUpdated={checkProviderKeysGate} />
       ) : isCurrentTabBlocked ? (
         <div className="bg-white rounded-lg shadow-lg p-6 border border-yellow-200">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Setup blocked until API keys are configured</h2>
