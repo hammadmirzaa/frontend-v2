@@ -758,7 +758,7 @@ export default function LibrariesTab() {
           </button>
         </div> */}
 
-        <div className={`flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ${documents.length === 0 ? " ": "bg-white "}`}>
+        <div className={`flex min-h-0 flex-col overflow-hidden rounded-xl ${documents.length === 0 ? "h-full ": "bg-white "}`}>
           {loading ? (
             <div className="flex flex-1 items-center justify-center py-24">
               <Spinner size="lg" />

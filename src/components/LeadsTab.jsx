@@ -614,7 +614,7 @@ export default function LeadsTab() {
         />
       ) : null}
 
-      <div className="h-full rounded-lg bg-[#FAFBFC] p-6">
+      <div className="h-full min-h-0 max-h-[calc(100vh-7rem)] rounded-lg bg-[#FAFBFC] p-6">
         {selectedLeadId ? (
           <div className="space-y-5">
             <div className="text-sm text-gray-500">
@@ -1441,13 +1441,13 @@ export default function LeadsTab() {
               </div>
             ) : null}
 
-            <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 md:p-6 ">
+            <div className={` ${leads.length === 0 ? "h-full min-h-0 max-h-[calc(100vh-16rem)] " : ""} mt-5 rounded-xl border border-gray-200 bg-white p-4 md:p-6 `}>
               {loading ? (
                 <div className="py-16 text-center text-gray-500">
                   Loading leads...
                     </div>
               ) : leads.length === 0 ? (
-                <div className="mx-auto flex max-w-xl flex-col items-center py-10 text-center">
+                <div className="mx-auto h-full justify-center flex max-w-xl flex-col items-center py-10 text-center">
                   <div className="mb-5 rounded-xl bg-cyan-50 p-3 text-brand-teal">
                     <UserPlus className="h-7 w-7" />
                   </div>

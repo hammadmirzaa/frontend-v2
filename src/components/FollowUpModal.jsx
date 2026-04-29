@@ -446,12 +446,11 @@ export default function FollowUpModal({
         normalizedData.internal_notes = descriptionText;
       }
       if (normalizedData.followup_type === "call" && isEditing) {
-        if (activityStatus === "completed")
+        if (activityStatus === "completed") {
           normalizedData.call_status = "completed";
-        if (activityStatus === "scheduled")
-          normalizedData.call_status = "rescheduled";
-        if (activityStatus === "pending")
-          normalizedData.call_status = normalizedData.call_status || "";
+        } else {
+          delete normalizedData.call_status;
+        }
       }
 
       const mergedDate =
@@ -504,9 +503,12 @@ export default function FollowUpModal({
         delete submitData.internal_notes;
       }
       if (normalizedData.followup_type === "call") {
-        delete submitData.email_subject;
-        delete submitData.email_content;
-        delete submitData.message_content;
+        if (!submitData.call_status) {
+          delete submitData.call_status;
+        }
+        if (!submitData.call_notes) {
+          delete submitData.call_notes;
+        }
       }
 
       // datetime-local is local time; convert to UTC ISO for backend storage.

@@ -825,7 +825,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
     <>
       <ToastContainer />
 
-      <div className="relative flex min-h-[min(720px,calc(100vh-5rem))] flex-1 flex-col bg-[#FAFBFC] p-6">
+      <div className="relative flex h-full min-h-0 max-h-[calc(100vh-7rem)]  flex-col bg-[#FAFBFC] p-6">
         <div className="flex items-center justify-between border-b border-gray-100 pb-5">
           <div className="flex items-center gap-4">
             <button type="button" onClick={onBack} className="rounded-lg p-2 text-gray-600 hover:bg-gray-100">
@@ -864,7 +864,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
           </div>
         </div>
 
-        <div className="mt-5 flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="mt-5 flex min-h-0 h-full flex-col overflow-y-auto">
           {activeTab === 'customization' && (
             <div className="space-y-6">
               <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -1222,7 +1222,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                       No guardrails match your search or filters.
                     </div>
                   ) : (
-                    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200">
+                    <div className="flex min-h-0 flex-col overflow-hidden h-full rounded-xl ">
                       <Table
                         columns={guardrailsColumns}
                         data={paginatedGuardrailsForTable}
@@ -1261,7 +1261,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   title="Your chatbot’s Knowledge Base is not configured."
                   description="The Knowledge Base provides the reference documents and data your bot uses to answer questions accurately and consistently."
                 >
-                  <div className="mt-6">
+                  <div className="mt-6 ">
                     <Button type="button" variant="primary" onClick={openCreateKnowledgeModal}>
                       Setup Now
                     </Button>
@@ -1307,7 +1307,7 @@ export default function ChatbotDetailView({ chatbotId, onBack, onChatbotUpdated 
                   {sortedFilteredDocuments.length === 0 ? (
                     <div className="py-10 text-center text-sm text-gray-500">No files match your search.</div>
                   ) : (
-                    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200">
+                    <div className="flex min-h-0 flex-col overflow-hidden h-full rounded-xl">
                       <Table
                         columns={knowledgeColumns}
                         data={paginatedKnowledgeForTable}

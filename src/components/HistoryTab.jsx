@@ -380,7 +380,7 @@ export default function HistoryTab() {
                     onNavigateChatbot={handleBreadcrumbChatbot}
                 />
             ) : (
-            <div className="flex max-h-[calc(100vh-7rem)] min-h-0 flex-col overflow-hidden p-2 sm:p-4">
+            <div className={`flex max-h-[calc(100vh-7rem)] ${conversations.length === 0 ? "h-full min-h-0" : ""} flex-col overflow-hidden p-2 sm:p-4`}>
                 <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden lg:flex-row lg:gap-4">
                     {/* Chatbots — master list */}
                     <aside className="flex w-full min-h-0 shrink-0 flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm lg:max-h-full lg:w-[300px] lg:max-w-[340px]">

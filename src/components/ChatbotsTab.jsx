@@ -406,7 +406,7 @@ export default function ChatbotsTab({
         </div>
 
         <div
-          className={`flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl p-5 ${
+          className={`flex min-h-0 ${chatbots.length === 0 ? 'h-full' : ''} flex-col p-4 rounded-xl ${
             subTab === 'deleted' && canManageDeletedChatbots
               ? !loadingDeleted && deletedChatbots.length > 0
                 ? 'bg-white'
