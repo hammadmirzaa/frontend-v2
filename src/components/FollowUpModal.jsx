@@ -520,6 +520,7 @@ export default function FollowUpModal({
       const finalSubmitData = {
         ...submitData,
         scheduled_at: scheduledDate.toISOString(),
+        status: isEditing ? "rescheduled" : "scheduled",
       };
 
       if (isEditing) {

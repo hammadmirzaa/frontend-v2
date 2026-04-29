@@ -379,6 +379,7 @@ export default function LibrariesTab() {
     setUploading(true)
     const formData = new FormData()
     files.forEach((f) => formData.append('files', f))
+    formData.append('chatbot_id', addChatbotId)
     try {
       await axios.post(`${API_URL}/api/documents/upload?chatbot_id=${addChatbotId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

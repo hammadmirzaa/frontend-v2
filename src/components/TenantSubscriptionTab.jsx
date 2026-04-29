@@ -28,6 +28,7 @@ import {
   USAGE_METRIC_BASIC_ROWS,
 } from '../theme/usageMetrics'
 import { cn } from '../utils/cn'
+import { COLORS } from '../lib/designTokens'
 import { cycleTableSort } from '../utils/tableSort'
 import { Button, SearchInput, Table, Pagination } from './ui'
 import Modal from './Modal'
@@ -138,14 +139,14 @@ const TENANT_PLAN_RADIO_OPTIONS = [
     title: 'Premium',
     hint: 'Platform-managed APIs; we host Pinecone and OpenAI usage.',
     Icon: Sparkles,
-    accent: 'from-violet-500 to-purple-800',
+    accent: 'from-brand-teal to-teal-700',
   },
   {
     value: 'BASIC',
     title: 'Basic',
     hint: 'Bring your own Pinecone and OpenAI keys (required for this plan).',
     Icon: KeyRound,
-    accent: 'from-slate-600 to-slate-900',
+    accent: 'from-gray-600 to-gray-900',
   },
 ]
 
@@ -715,7 +716,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                             <h3 className="mt-2 text-xl font-bold text-gray-900">{getPlanName(subscription.plan_type)}</h3>
                             <p className="mt-2 text-sm text-gray-600">{getPlanDescription(subscription.plan_type)}</p>
                           </div>
-                          {/* {subscription.plan_type !== 'ONE_TIME' && (
+                          {subscription.plan_type !== 'ONE_TIME' && (
                             <button
                               type="button"
                               onClick={() => {
@@ -727,7 +728,7 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
                               <Edit className="h-4 w-4" strokeWidth={2} />
                               Change plan
                             </button>
-                          )} */}
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {subscription.status === 'ACTIVE' ? (
@@ -1406,111 +1407,90 @@ export default function TenantSubscriptionTab({ onProviderKeysUpdated }) {
         </div>
       </Modal>
 
-      {isEditPlanModalOpen && subscription && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-[2px]"
-          role="presentation"
-          onClick={() => setIsEditPlanModalOpen(false)}
-        >
+      <Modal
+        isOpen={isEditPlanModalOpen && !!subscription}
+        onClose={() => setIsEditPlanModalOpen(false)}
+        title="Change subscription plan"
+        subtitle="Applies to your next billing cycle."
+        panelClassName="max-w-md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Choose plan</p>
           <div
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-2xl shadow-slate-900/15"
-            role="dialog"
-            aria-labelledby="change-plan-title"
-            aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
+            role="radiogroup"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2"
           >
-            <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-gradient-to-br from-violet-50/95 to-white px-5 py-4 sm:px-6">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-900 text-white shadow-sm">
-                  <Edit className="h-5 w-5" strokeWidth={2} />
-                </div>
-                <div>
-                  <h3 id="change-plan-title" className="text-lg font-bold text-slate-900">
-                    Change subscription plan
-                  </h3>
-                  <p className="mt-0.5 text-xs text-slate-600">Applies to your next billing cycle.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Close"
-                onClick={() => setIsEditPlanModalOpen(false)}
-              >
-                <X className="h-5 w-5" strokeWidth={2} />
-              </button>
-            </div>
-            <div className="space-y-4 px-5 py-5 sm:px-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Choose plan</p>
-              <div
-                role="radiogroup"
-                aria-labelledby="change-plan-title"
-                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
-              >
-                {TENANT_PLAN_RADIO_OPTIONS.map((opt) => {
-                  const sel = selectedPlanType === opt.value
-                  const { Icon: PlanIcon } = opt
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={sel}
-                      onClick={() => setSelectedPlanType(opt.value)}
-                      className={`relative flex flex-col gap-3 rounded-xl border p-4 text-left shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 ${
-                        sel
-                          ? 'border-violet-400 bg-violet-50/50 ring-2 ring-violet-500/25'
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80'
-                      }`}
-                    >
-                      {sel && (
-                        <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white shadow-sm">
-                          <Check className="h-3 w-3" strokeWidth={3} />
-                        </span>
-                      )}
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${opt.accent} text-white shadow-sm`}
-                      >
-                        <PlanIcon className="h-5 w-5" strokeWidth={2} />
-                      </div>
-                      <div className="min-w-0 pr-7">
-                        <span className="block text-sm font-bold text-slate-900">{opt.title}</span>
-                        <span className="mt-1 block text-xs leading-snug text-slate-600">{opt.hint}</span>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="text-xs text-slate-500">
-                Current subscription:{' '}
-                <span className="font-medium text-slate-800">{getPlanName(subscription.plan_type)}</span>
-              </p>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-                <p className="text-xs leading-relaxed text-slate-600">
-                  Plan changes take effect immediately; your next invoice reflects the new rate.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-              <button
-                type="button"
-                onClick={() => setIsEditPlanModalOpen(false)}
-                className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 sm:w-auto"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleUpdatePlan}
-                disabled={updating || selectedPlanType === subscription.plan_type}
-                className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-              >
-                {updating ? 'Updating…' : 'Update plan'}
-              </button>
-            </div>
+            {TENANT_PLAN_RADIO_OPTIONS.map((opt) => {
+              const sel = selectedPlanType === opt.value
+              const { Icon: PlanIcon } = opt
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={sel}
+                  onClick={() => setSelectedPlanType(opt.value)}
+                  className={cn(
+                    'relative flex flex-col gap-3 rounded-xl border p-4 text-left shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2',
+                    sel
+                      ? 'shadow-sm'
+                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/80'
+                  )}
+                  style={
+                    sel
+                      ? {
+                          borderColor: COLORS.BRAND,
+                          backgroundColor: COLORS.PLAYGROUND_CHAT_HIGHLIGHT_BG,
+                        }
+                      : undefined
+                  }
+                >
+                  {sel && (
+                    <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-brand-teal text-white shadow-sm">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                  )}
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${opt.accent} text-white shadow-sm`}
+                  >
+                    <PlanIcon className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0 pr-7">
+                    <span className="block text-sm font-bold text-gray-900">{opt.title}</span>
+                    <span className="mt-1 block text-xs leading-snug text-gray-600">{opt.hint}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          {subscription && (
+            <p className="text-xs text-gray-500">
+              Current subscription:{' '}
+              <span className="font-medium text-gray-800">{getPlanName(subscription.plan_type)}</span>
+            </p>
+          )}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+            <p className="text-xs leading-relaxed text-gray-600">
+              Plan changes take effect immediately; your next invoice reflects the new rate.
+            </p>
           </div>
         </div>
-      )}
+
+        <div className="mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-gray-100 bg-white pt-4">
+          <Button type="button" variant="outline" onClick={() => setIsEditPlanModalOpen(false)} className="w-full !py-2.5">
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleUpdatePlan}
+            disabled={updating || selectedPlanType === subscription?.plan_type}
+            className="w-full !py-2.5"
+          >
+            {updating ? 'Updating…' : 'Update plan'}
+          </Button>
+        </div>
+      </Modal>
 
     </>
   )

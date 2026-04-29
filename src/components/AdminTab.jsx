@@ -486,7 +486,7 @@ export default function AdminTab() {
                                                 >
                                                     <Pencil className="h-4 w-4" strokeWidth={2} />
                                                 </button>
-                                                {row.is_active && canToggleActive(row) ? (
+                                                {/* {row.is_active && canToggleActive(row) ? (
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDeactivateClick(row)}
@@ -496,7 +496,7 @@ export default function AdminTab() {
                                                     >
                                                         <Trash2 className="h-4 w-4" strokeWidth={2} />
                                                     </button>
-                                                ) : null}
+                                                ) : null} */}
                                                 {!row.is_active && canToggleActive(row) ? (
                                                     <button
                                                         type="button"

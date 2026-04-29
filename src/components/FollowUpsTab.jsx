@@ -361,7 +361,7 @@ export default function FollowUpsTab() {
   const getLaneForFollowup = (followup) => {
     if (followup.status === 'failed') return 'failed'
     if (followup.status === 'sent') return 'sent'
-    if (followup.call_status === 'rescheduled') return 'rescheduled'
+    if (followup.status === 'rescheduled') return 'rescheduled'
     if (followup.status !== 'scheduled') return 'scheduled'
 
     const scheduledDate = parseApiUtcDate(followup.scheduled_at)
@@ -427,6 +427,8 @@ export default function FollowUpsTab() {
     })
     return acc
   }, [preLaneFilteredFollowups])
+
+  console.log('Lane counts:', laneCounts)
 
   const laneFilteredFollowups = useMemo(() => {
     const items = preLaneFilteredFollowups.filter((item) => getLaneForFollowup(item) === lane)
